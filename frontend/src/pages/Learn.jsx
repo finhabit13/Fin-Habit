@@ -1,19 +1,20 @@
-import Glyph from "../lib/glyphs";
 import { useApp } from "../context/AppContext";
-import { TOPICS } from "../lib/data";
+import { useI18n } from "../lib/i18n";
+import Glyph from "../lib/glyphs";
 
 export default function Learn() {
   const { user, run, openModal, showSuccess } = useApp();
+  const { t, content } = useI18n();
   if (!user) return null;
 
-  const totalLessons = TOPICS.reduce((n, t) => n + t.lessons.length, 0);
+  const totalLessons = content.TOPICS.reduce((n, topic) => n + topic.lessons.length, 0);
   const done = user.lessonsDone.length;
   const pct = totalLessons ? Math.round((done / totalLessons) * 100) : 0;
 
   const finishLesson = async (lesson) => {
     const res = await run((s) => s.completeLesson(lesson.id));
     if (!res.ok || res.data.already) return;
-    showSuccess("Materi selesai!", "+10 poin");
+    showSuccess(t("learn.doneTitle"), "+10 " + t("common.points"));
   };
 
   const openTopic = (topic) =>
@@ -30,7 +31,7 @@ export default function Learn() {
               <h4>{lesson.title}</h4>
               <p>{lesson.body}</p>
               <button className="lesson-btn" disabled={isDone} onClick={() => finishLesson(lesson)}>
-                {isDone ? "Selesai ✓" : "Tandai selesai (+10 poin)"}
+                {isDone ? t("learn.done") : t("learn.markDone")}
               </button>
             </div>
           );
@@ -40,24 +41,24 @@ export default function Learn() {
 
   return (
     <>
-      <h1 className="page-title">Learn</h1>
-      <p className="muted">Materi singkat, lalu langsung dipraktikkan.</p>
+      <h1 className="page-title">{t("learn.title")}</h1>
+      <p className="muted">{t("learn.sub")}</p>
 
       <div className="card">
         <div className="row-between">
-          <h3 className="card-title">Progress materi</h3>
+          <h3 className="card-title">{t("learn.progressTitle")}</h3>
           <span className="pill">{pct}%</span>
         </div>
         <div className="bar">
           <span className="bar-fill" style={{ width: pct + "%" }} />
         </div>
         <p className="muted small">
-          {done} dari {totalLessons} materi selesai.
+          {t("learn.progressSub", { done, total: totalLessons })}
         </p>
       </div>
 
       <div className="grid-2">
-        {TOPICS.map((topic) => {
+        {content.TOPICS.map((topic) => {
           const doneCount = topic.lessons.filter((l) => user.lessonsDone.includes(l.id)).length;
           return (
             <div key={topic.id} className="card learn-card">
@@ -69,13 +70,13 @@ export default function Learn() {
                 <p className="learn-desc">{topic.desc}</p>
                 <div className="learn-foot">
                   <span className="learn-progress">
-                    {doneCount}/{topic.lessons.length} materi
+                    {t("learn.count", { n: topic.lessons.length, done: doneCount })}
                   </span>
                   <button
                     className="btn btn-outline small-btn"
                     onClick={() => openTopic(topic)}
                   >
-                    {doneCount === topic.lessons.length ? "Baca lagi" : "Pelajari"}
+                    {doneCount === topic.lessons.length ? t("learn.readAgain") : t("learn.study")}
                   </button>
                 </div>
               </div>

@@ -4,17 +4,17 @@ export const overallScore = (dims) =>
   Math.round((dims.saving + dims.spending + dims.decision + dims.goal + dims.risk) / 5);
 
 export const scoreTitle = (s) => {
-  if (s >= 90) return "Financial Master";
-  if (s >= 80) return "Financial Smart";
-  if (s >= 65) return "Getting Steady";
-  return "Financial Starter";
+  if (s >= 90) return "score.tMaster";
+  if (s >= 80) return "score.tSmart";
+  if (s >= 65) return "score.tSteady";
+  return "score.tStarter";
 };
 
 export const levelName = (points) => {
-  if (points >= 2000) return "Financial Master";
-  if (points >= 1200) return "Financial Achiever";
-  if (points >= 600) return "Financial Explorer";
-  return "Financial Beginner";
+  if (points >= 2000) return "level.master";
+  if (points >= 1200) return "level.achiever";
+  if (points >= 600) return "level.explorer";
+  return "level.beginner";
 };
 
 export const todayKey = () => {
@@ -25,15 +25,15 @@ export const todayKey = () => {
 export const monthKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
-export const dayLabel = (dateStr) => {
+export const dayLabel = (dateStr, lang = "id") => {
   const today = todayKey();
-  if (dateStr === today) return "Hari ini";
+  if (dateStr === today) return lang === "en" ? "Today" : "Hari ini";
   const y = new Date();
   y.setDate(y.getDate() - 1);
   const yesterday = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
-  if (dateStr === yesterday) return "Kemarin";
+  if (dateStr === yesterday) return lang === "en" ? "Yesterday" : "Kemarin";
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
+  return d.toLocaleDateString(lang === "en" ? "en-US" : "id-ID", { weekday: "short", day: "numeric", month: "short" });
 };
 
 export const budgetStatus = (spent, budget) => {
@@ -52,10 +52,10 @@ export const budgetInfo = (spent, budget) => {
 
 export const greeting = () => {
   const h = new Date().getHours();
-  if (h < 11) return "Good morning";
-  if (h < 15) return "Good afternoon";
-  if (h < 19) return "Good evening";
-  return "Good night";
+  if (h < 11) return "morning";
+  if (h < 15) return "afternoon";
+  if (h < 19) return "evening";
+  return "night";
 };
 
 export const uid = () =>

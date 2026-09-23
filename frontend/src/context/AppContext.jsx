@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 
 import { api, ApiError, NetworkError, clearToken, hasToken, setToken } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import { store } from "../lib/store";
 
 const AppCtx = createContext(null);
 
-const NAV_TABS = ["home", "learn", "challenge", "score", "profile"];
+const NAV_TABS = ["home", "learn", "challenge", "score", "leaderboard", "profile"];
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -19,6 +20,8 @@ export function AppProvider({ children }) {
 
   const toastTimer = useRef(null);
   const successTimer = useRef(null);
+
+  const { t } = useI18n();
 
   const service = demo ? store : api;
 
@@ -52,6 +55,11 @@ export function AppProvider({ children }) {
     [demo, showToast]
   );
 
+  const loggerIn = useCallback(
+    (username) => showToast(t("toast.hello", { name: username })),
+    [showToast, t]
+  );
+
   const logout = useCallback(() => {
     clearToken();
     setUser(null);
@@ -68,20 +76,20 @@ export function AppProvider({ children }) {
         return { ok: true, data };
       } catch (err) {
         if (err instanceof NetworkError) {
-          enterDemo("Backend tidak terhubung. Beralih ke mode demo.");
+          enterDemo(t("toast.demoMode"));
         } else if (err instanceof ApiError) {
           if (err.status === 401) {
             logout();
             return { ok: false };
           }
-          if (!silent) showToast(err.message);
+          if (!silent) showToast(err.key ? t(err.key) : err.message);
         } else {
-          if (!silent) showToast(err.message || "Terjadi kesalahan");
+          if (!silent) showToast(err.message || t("toast.error"));
         }
         return { ok: false };
       }
     },
-    [demo, enterDemo, logout, showToast, service]
+    [demo, enterDemo, logout, showToast, service, t]
   );
 
   /**
@@ -110,10 +118,13 @@ export function AppProvider({ children }) {
       try {
         const target = demo ? store : api;
         const data = await target[kind](body);
+        if (data.needVerification) {
+          return { ok: true, needVerification: true, email: data.email };
+        }
         if (!demo) setToken(data.token);
         setUser(data.user);
         setPage("home");
-        showToast(demo ? "Mode demo aktif" : `Halo, ${data.user.name}!`);
+        showToast(demo ? t("toast.demoMode") : t("toast.hello", { name: data.user.name }));
         return { ok: true };
       } catch (err) {
         if (err instanceof NetworkError) {
@@ -122,18 +133,48 @@ export function AppProvider({ children }) {
             const demoUser = await store.login(body);
             setUser(demoUser.user);
             setPage("home");
-            showToast("Backend tidak terhubung. Mode demo aktif.");
+            showToast(t("toast.demoFallback"));
             return { ok: true };
           }
-        } else if (err instanceof ApiError) {
-          showToast(err.message);
-        } else {
-          showToast(err.message || "Terjadi kesalahan");
+          return { ok: false, message: t("toast.network") };
         }
-        return { ok: false };
+        const key = err.key || null;
+        const msg = key ? t(key) : err.message || t("toast.error");
+        showToast(msg);
+        return { ok: false, message: msg, key };
       }
     },
-    [demo, showToast]
+    [demo, showToast, t]
+  );
+
+  const verify = useCallback(
+    async (body) => {
+      try {
+        if (demo) {
+          const data = await store.login({ email: body.email, password: body.password });
+          setUser(data.user);
+          setPage("home");
+          showToast(t("toast.demoMode"));
+          return { ok: true };
+        }
+        const data = await api.verify(body);
+        if (data.token) setToken(data.token);
+        setUser(data.user);
+        setPage("home");
+        showToast(t("toast.verified"));
+        return { ok: true };
+      } catch (err) {
+        if (err instanceof NetworkError) {
+          const { ok, message, key } = await auth("login", { email: body.email, password: body.password });
+          return ok ? { ok: true } : { ok: false, message, key };
+        }
+        const key = err.key || null;
+        const msg = key ? t(key) : err.message || t("toast.error");
+        showToast(msg);
+        return { ok: false, message: msg, key };
+      }
+    },
+    [demo, showToast, t, auth]
   );
 
   const value = {
@@ -154,6 +195,7 @@ export function AppProvider({ children }) {
     run,
     boot,
     auth,
+    verify,
     logout,
     enterDemo
   };

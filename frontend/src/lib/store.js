@@ -27,6 +27,7 @@ function seed() {
   d.challengeCategories = [];
   d.caseIndex = 0;
   d.lastActiveDay = null;
+  d.role = "user";
   return d;
 }
 
@@ -251,6 +252,38 @@ export const store = {
     u.doneMissions.push(id);
     grant(m.pts || 40, m.dim || "goal", 2);
     return { user: userView() };
+  },
+
+  async leaderboard() {
+    await delay();
+    return {
+      rows: [
+        {
+          id: "me",
+          name: db.user.name,
+          points: db.user.points,
+          streak: db.user.streak,
+          badges: db.user.badges || []
+        }
+      ],
+      meId: "me"
+    };
+  },
+
+  async adminStats() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminUsers() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminExpenses() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminSetRole() {
+    throw new Error("Akses admin ditolak");
   }
 };
 

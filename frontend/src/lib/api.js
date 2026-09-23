@@ -19,9 +19,10 @@ const TOKEN_KEY = "finhabit_token";
 let token = localStorage.getItem(TOKEN_KEY);
 
 export class ApiError extends Error {
-  constructor(status, message) {
+  constructor(status, message, key = null) {
     super(message);
     this.status = status;
+    this.key = key;
   }
 }
 
@@ -78,7 +79,8 @@ function toUser(row) {
     savingGoal: Number(row.saving_goal),
     savingCurrent: Number(row.saving_current),
     monthlyBudget: Number(row.monthly_budget),
-    lastActiveDay: row.last_active_day
+    lastActiveDay: row.last_active_day,
+    role: row.role || "user"
   };
 }
 
@@ -103,8 +105,22 @@ function toRow(user) {
     saving_goal: user.savingGoal,
     saving_current: user.savingCurrent,
     monthly_budget: user.monthlyBudget,
-    last_active_day: user.lastActiveDay
+    last_active_day: user.lastActiveDay,
+    role: user.role || "user"
   };
+}
+
+function authErrorKey(raw, kind) {
+  const r = (raw || "").toLowerCase();
+  if (/already registered|already been registered|exists|duplicate/.test(r)) return "err.emailTaken";
+  if (/email not confirmed|confirm your email|verify your email/.test(r)) return "err.emailNotConfirmed";
+  if (/invalid email|unable to validate|email address|missing email/.test(r)) return "err.emailFormat";
+  if (/invalid login credentials/.test(r)) return "err.badCredentials";
+  if (/too many requests|rate limit/.test(r)) return "err.rateLimit";
+  if (/password should be at least|too short|weak password/.test(r)) return "err.weakPassword";
+  if (/signups? not allowed|signup closed/.test(r)) return "err.signupClosed";
+  if (/expired|invalid token|invalid otp|verification code/i.test(r)) return "err.otpInvalid";
+  return kind === "login" ? "err.loginFailed" : "err.registerFailed";
 }
 
 // Trigger profiles dibuat saat signUp; beri jeda singkat bila baris belum ada.
@@ -162,7 +178,8 @@ function freshUser(name) {
     savingGoal: 300000,
     savingCurrent: 0,
     monthlyBudget: 500000,
-    lastActiveDay: null
+    lastActiveDay: null,
+    role: "user"
   };
 }
 
@@ -177,35 +194,53 @@ export const api = {
     }
   },
 
-  register: async ({ name, email, password }) => {
+  register: async ({ name, email }) => {
     const c = needClient();
-    const { data, error } = await c.auth.signUp({
+    const { error } = await c.auth.signInWithOtp({
       email,
-      password,
       options: { data: { name } }
     });
     if (error) {
-      if (/already registered|exists|duplicate/i.test(error.message)) throw new ApiError(409, "Email sudah terdaftar");
-      throw new ApiError(400, error.message);
+      const status = /invalid email|unable to validate|email address|missing email/i.test(error.message) ? 400 : 500;
+      const key = authErrorKey(error.message, "register");
+      throw new ApiError(status, key, key);
     }
-    let session = data.session;
-    if (!session) {
-      // Konfirmasi email aktif -> signUp tanpa sesi; coba masuk langsung.
-      const { data: li, error: liError } = await c.auth.signInWithPassword({ email, password });
-      if (liError || !li.session) throw new ApiError(400, "Periksa email kamu untuk konfirmasi pendaftaran.");
-      session = li.session;
+    return { needVerification: true, email };
+  },
+
+  resendCode: async ({ email, name }) => {
+    const c = needClient();
+    const { error } = await c.auth.signInWithOtp({
+      email,
+      options: { data: name ? { name } : undefined }
+    });
+    if (error) throw new ApiError(500, authErrorKey(error.message, "register"), authErrorKey(error.message, "register"));
+    return { ok: true };
+  },
+
+  verify: async ({ email, code, password }) => {
+    const c = needClient();
+    const { data, error } = await c.auth.verifyOtp({ email, token: String(code).trim(), type: "email" });
+    if (error) {
+      const key = authErrorKey(error.message, "register");
+      throw new ApiError(401, key, key);
+    }
+    if (password) {
+      const { error: pu } = await c.auth.updateUser({ password });
+      if (pu) throw new ApiError(500, pu.message);
     }
     const user = await loadProfile(data.user.id);
-    setToken(session.access_token);
-    return { token: session.access_token, user };
+    const token = data.session?.access_token;
+    if (token) setToken(token);
+    return { token: token || null, user };
   },
 
   login: async ({ email, password }) => {
     const c = needClient();
     const { data, error } = await c.auth.signInWithPassword({ email, password });
     if (error) {
-      if (/invalid login credentials/i.test(error.message)) throw new ApiError(401, "Email atau password salah");
-      throw new ApiError(401, error.message);
+      const key = authErrorKey(error.message, "login");
+      throw new ApiError(401, key, key);
     }
     const user = await loadProfile(data.user.id);
     setToken(data.session.access_token);
@@ -412,5 +447,80 @@ export const api = {
       applyReward(u, m.pts || 40, m.dim || "goal", 2);
     });
     return { user };
+  },
+
+  leaderboard: async () => {
+    const c = needClient();
+    const au = await sessionUser();
+    const { data, error } = await c
+      .from("leaderboard")
+      .select("id, name, points, streak, badges")
+      .limit(100);
+    if (error) throw new ApiError(500, error.message);
+    return {
+      rows: (data || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        points: Number(r.points),
+        streak: Number(r.streak),
+        badges: r.badges || []
+      })),
+      meId: au.id
+    };
+  },
+
+  adminStats: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c.rpc("admin_stats");
+    if (error) throw new ApiError(500, error.message);
+    if (!data) throw new ApiError(403, "Akses admin ditolak");
+    return data;
+  },
+
+  adminUsers: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c
+      .from("profiles")
+      .select("id, name, points, streak, challenges_done, badges, role")
+      .order("points", { ascending: false });
+    if (error) throw new ApiError(500, error.message);
+    return (data || []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      points: Number(r.points),
+      streak: Number(r.streak),
+      challengesDone: Number(r.challenges_done),
+      badges: r.badges || [],
+      role: r.role || "user"
+    }));
+  },
+
+  adminExpenses: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c
+      .from("expenses")
+      .select("id, amount, category, note, date, user_id")
+      .order("date", { ascending: false })
+      .limit(50);
+    if (error) throw new ApiError(500, error.message);
+    return (data || []).map((e) => ({
+      id: e.id,
+      amount: Number(e.amount),
+      category: e.category,
+      note: e.note,
+      date: e.date,
+      userId: e.user_id
+    }));
+  },
+
+  adminSetRole: async ({ id, role }) => {
+    const c = needClient();
+    await sessionUser();
+    const { error } = await c.from("profiles").update({ role }).eq("id", id);
+    if (error) throw new ApiError(500, error.message);
+    return { ok: true };
   }
 };

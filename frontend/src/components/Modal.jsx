@@ -1,9 +1,11 @@
 import { useEffect, useId } from "react";
 
 import { useApp } from "../context/AppContext";
+import { useI18n } from "../lib/i18n";
 
 export default function Modal() {
   const { modal, closeModal } = useApp();
+  const { t } = useI18n();
   const titleId = useId();
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function Modal() {
       onClick={(e) => e.target === e.currentTarget && closeModal()}
     >
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <button className="modal-close" onClick={closeModal} aria-label="Tutup">
+        <button className="modal-close" onClick={closeModal} aria-label={t("common.close")}>
           ✕
         </button>
         <h2 className="modal-title" id={titleId}>

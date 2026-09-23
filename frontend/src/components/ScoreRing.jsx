@@ -1,4 +1,7 @@
+import { useI18n } from "../lib/i18n";
+
 export default function ScoreRing({ value, big = false }) {
+  const { t } = useI18n();
   const total = 2 * Math.PI * 52;
   const pct = Math.max(0, Math.min(100, value || 0));
   const offset = total - (total * pct) / 100;
@@ -9,7 +12,7 @@ export default function ScoreRing({ value, big = false }) {
         className="ring"
         viewBox="0 0 120 120"
         role="img"
-        aria-label={"Skor " + (value || 0) + " dari 100"}
+        aria-label={t("score.sr", { value: value || 0 })}
       >
         <circle className="ring-bg" cx="60" cy="60" r="52" />
         <circle

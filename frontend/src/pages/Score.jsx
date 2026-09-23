@@ -1,10 +1,11 @@
 import ScoreRing from "../components/ScoreRing";
 import { useApp } from "../context/AppContext";
-import { DIM_LABELS, DAY_LABELS } from "../lib/data";
+import { useI18n } from "../lib/i18n";
 import { overallScore, scoreTitle } from "../lib/util";
 
 export default function Score() {
   const { user } = useApp();
+  const { t, content } = useI18n();
   if (!user) return null;
 
   const s = overallScore(user.dims);
@@ -12,25 +13,24 @@ export default function Score() {
 
   return (
     <>
-      <h1 className="page-title">Financial Habit Score</h1>
+      <h1 className="page-title">{t("score.title")}</h1>
 
       <div className="card score-hero">
         <ScoreRing value={s} big />
-        <p className="score-title center">{scoreTitle(s)}</p>
+        <p className="score-title center">{t(scoreTitle(s))}</p>
         <p className="muted small center">
-          Minggu lalu {user.lastWeek} → minggu ini {s} ({diff >= 0 ? "+" : ""}
-          {diff})
+          {t("score.week", { last: user.lastWeek, now: s, diff: (diff >= 0 ? "+" : "") + diff })}
         </p>
       </div>
 
-      <h3 className="section-title">Breakdown</h3>
+      <h3 className="section-title">{t("score.breakdown")}</h3>
       <div className="card">
-        {Object.keys(DIM_LABELS).map((key) => {
+        {Object.keys(content.DIM_LABELS).map((key) => {
           const v = user.dims[key] || 0;
           return (
             <div key={key} className="break-row">
               <div className="break-head">
-                <span>{DIM_LABELS[key]}</span>
+                <span>{content.DIM_LABELS[key]}</span>
                 <b>{v}</b>
               </div>
               <div className="bar">
@@ -41,7 +41,7 @@ export default function Score() {
         })}
       </div>
 
-      <h3 className="section-title">Your Progress</h3>
+      <h3 className="section-title">{t("score.progress")}</h3>
       <div className="card">
         <div className="chart">
           {(user.weekly || []).map((v, i) => (
@@ -50,11 +50,11 @@ export default function Score() {
               className={"chart-col" + (i === user.weekly.length - 1 ? " today" : "")}
             >
               <div className="chart-bar" style={{ height: Math.max(8, Math.min(100, v)) + "%" }} />
-              <span className="chart-lab">{DAY_LABELS[i]}</span>
+              <span className="chart-lab">{content.DAY_LABELS[i]}</span>
             </div>
           ))}
         </div>
-        <p className="muted small">Score 7 hari terakhir.</p>
+        <p className="muted small">{t("score.weekHint")}</p>
       </div>
     </>
   );

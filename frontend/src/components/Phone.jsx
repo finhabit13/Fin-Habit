@@ -1,5 +1,6 @@
 import Glyph from "../lib/glyphs";
 import { useApp } from "../context/AppContext";
+import { useI18n } from "../lib/i18n";
 
 import Home from "../pages/Home";
 import Learn from "../pages/Learn";
@@ -11,6 +12,8 @@ import Decision from "../pages/Decision";
 import Family from "../pages/Family";
 import Score from "../pages/Score";
 import Profile from "../pages/Profile";
+import Leaderboard from "../pages/Leaderboard";
+import Admin from "../pages/Admin";
 
 const PAGES = {
   home: Home,
@@ -22,27 +25,31 @@ const PAGES = {
   decide: Decision,
   family: Family,
   score: Score,
-  profile: Profile
+  profile: Profile,
+  leaderboard: Leaderboard,
+  admin: Admin
 };
 
 const NAV = [
-  { id: "home", icon: "home", label: "Home" },
-  { id: "learn", icon: "book", label: "Learn" },
-  { id: "challenge", icon: "target", label: "Challenge" },
-  { id: "score", icon: "chart", label: "Score" },
-  { id: "profile", icon: "user", label: "Profile" }
+  { id: "home", icon: "home" },
+  { id: "learn", icon: "book" },
+  { id: "challenge", icon: "target" },
+  { id: "score", icon: "chart" },
+  { id: "leaderboard", icon: "crown" },
+  { id: "profile", icon: "user" }
 ];
 
 const TOOLS = [
-  { id: "expenses", icon: "receipt", label: "Track Spending" },
-  { id: "budget", icon: "sliders", label: "Budget" },
-  { id: "saving", icon: "piggy", label: "Saving" },
-  { id: "decide", icon: "scale", label: "Decision Lab" },
-  { id: "family", icon: "users", label: "Family" }
+  { id: "expenses", icon: "receipt" },
+  { id: "budget", icon: "sliders" },
+  { id: "saving", icon: "piggy" },
+  { id: "decide", icon: "scale" },
+  { id: "family", icon: "users" }
 ];
 
 export default function Phone() {
   const { user, page, go, demo } = useApp();
+  const { t } = useI18n();
   const Page = PAGES[page] || Home;
   const initial = (user?.name || "B").trim().charAt(0).toUpperCase();
 
@@ -56,36 +63,39 @@ export default function Phone() {
         <span className="side-ico">
           <Glyph name={n.icon} size={19} />
         </span>
-        {n.label}
+        {t("nav." + n.id)}
       </button>
     </li>
   );
 
   return (
     <div className="app">
-      <nav className="sidebar" aria-label="Menu utama">
+      <nav className="sidebar" aria-label={t("nav.mainMenu")}>
         <div className="brand">
           <span className="brand-mark">₣</span>
           <span className="brand-name">FINHABIT</span>
-          <span className="brand-tag">Kebiasaan finansial remaja</span>
+          <span className="brand-tag">{t("nav.brandTag")}</span>
         </div>
 
-        <p className="nav-group-label">Utama</p>
+        <p className="nav-group-label">{t("nav.groupMain")}</p>
         <ul className="side-nav">{NAV.map(renderLink)}</ul>
 
-        <p className="nav-group-label">Alat</p>
-        <ul className="side-nav">{TOOLS.map(renderLink)}</ul>
+        <p className="nav-group-label">{t("nav.groupTools")}</p>
+        <ul className="side-nav">
+          {TOOLS.map(renderLink)}
+          {user && user.role === "admin" && renderLink({ id: "admin", icon: "shieldCheck" })}
+        </ul>
 
         <div className="side-foot">
-          {demo && <div className="demo-banner demo-banner-side">Mode demo (data lokal)</div>}
+          {demo && <div className="demo-banner demo-banner-side">{t("nav.demoBanner")}</div>}
           <div className="side-user">
-            <button className="avatar" onClick={() => go("profile")} aria-label="Buka profil">
+            <button className="avatar" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
               {initial}
             </button>
             <div className="side-user-meta">
-              <p className="side-user-name">{user?.name || "Pengguna"}</p>
+              <p className="side-user-name">{user?.name || t("nav.user")}</p>
               <p className="side-user-stat">
-                {user?.points ?? 0} poin · streak {user?.streak ?? 0}
+                {t("nav.userStat", { points: user?.points ?? 0, streak: user?.streak ?? 0 })}
               </p>
             </div>
           </div>
@@ -97,18 +107,18 @@ export default function Phone() {
           <span className="brand-mark">₣</span>
           <span className="brand-name">FINHABIT</span>
         </div>
-        <button className="avatar" onClick={() => go("profile")} aria-label="Buka profil">
+        <button className="avatar" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
           {initial}
         </button>
       </header>
 
-      {demo && <div className="demo-banner demo-banner-mobile">Mode demo (data lokal)</div>}
+      {demo && <div className="demo-banner demo-banner-mobile">{t("nav.demoBanner")}</div>}
 
       <main className="screen-area" id="screenArea">
         <Page />
       </main>
 
-      <nav className="bottom-nav" aria-label="Menu utama">
+      <nav className="bottom-nav" aria-label={t("nav.mainMenu")}>
         {NAV.map((n) => (
           <button
             key={n.id}
@@ -119,7 +129,7 @@ export default function Phone() {
             <span className="nav-ico">
               <Glyph name={n.icon} size={21} />
             </span>
-            <span className="nav-label">{n.label}</span>
+            <span className="nav-label">{t("nav." + n.id)}</span>
           </button>
         ))}
       </nav>

@@ -1,0 +1,887 @@
+// Lokalisasi lengkap: antarmuka + seluruh konten materi.
+// ID = Bahasa Indonesia, EN = English. `t()` di i18n.jsx mengambil dari sini.
+
+const UI_ID = {
+  "nav.home": "Home",
+  "nav.learn": "Belajar",
+  "nav.challenge": "Tantangan",
+  "nav.expenses": "Catat Pengeluaran",
+  "nav.budget": "Budget",
+  "nav.saving": "Menabung",
+  "nav.decide": "Decision Lab",
+  "nav.family": "Misi Keluarga",
+  "nav.score": "Skor",
+  "nav.leaderboard": "Peringkat",
+  "nav.profile": "Profil",
+  "nav.admin": "Admin",
+  "nav.mainMenu": "Menu utama",
+  "nav.brandTag": "Kebiasaan finansial remaja",
+  "nav.groupMain": "Utama",
+  "nav.groupTools": "Alat",
+  "nav.demoBanner": "Mode demo (data lokal)",
+  "nav.openProfile": "Buka profil",
+  "nav.user": "Pengguna",
+  "nav.userStat": "{points} poin · streak {streak}",
+
+  "common.close": "Tutup",
+  "common.loading": "Memuat...",
+  "common.minutes": "menit",
+  "common.points": "poin",
+
+  "auth.tagline": "BELANJA CERDAS. IRI AKAN HILANG.",
+  "auth.taglineEn": "SPEND SMART. SAVE BETTER. BEAT FOMO.",
+  "auth.subtitle": "Kelola uangmu tanpa harus membosankan.",
+  "auth.tabLogin": "Masuk",
+  "auth.tabRegister": "Daftar",
+  "auth.phName": "Nama",
+  "auth.phEmail": "Email",
+  "auth.phPassword": "Kata sandi (min. 6 karakter)",
+  "auth.errName": "Nama wajib diisi",
+  "auth.errEmail": "Email wajib diisi",
+  "auth.errEmailFormat": "Format email tidak valid",
+  "auth.errPassShort": "Kata sandi minimal 6 karakter",
+  "auth.btnLogin": "Masuk",
+  "auth.btnRegister": "Buat akun",
+  "auth.btnDemo": "Coba mode demo tanpa akun",
+  "auth.language": "Bahasa",
+
+  "auth.oVerTitle": "Kode verifikasi",
+  "auth.oVerSub": "Kami telah mengirim kode 6 digit ke {email}. Masukkan kodenya untuk menyelesaikan pendaftaran.",
+  "auth.oVerSent": "Kode verifikasi dikirim ke email kamu.",
+  "auth.oVerResend": "Kirim ulang kode",
+  "auth.oVerCooldown": "Kirim ulang dalam {s} detik",
+  "auth.oVerVerify": "Verifikasi",
+  "auth.oVerError": "Kode salah atau sudah kedaluwarsa. Coba lagi.",
+  "auth.oVerBack": "Ubah email",
+  "auth.oVerDigit": "Kotak kode ke-{n}",
+  "auth.mascotAlt": "Maskot FINHABIT",
+
+  "toast.verified": "Akun berhasil diverifikasi!",
+  "toast.error": "Terjadi kesalahan",
+  "toast.demoMode": "Mode demo aktif",
+  "toast.demoFallback": "Backend tidak terhubung. Mode demo aktif.",
+  "toast.network": "Jaringan bermasalah. Coba lagi.",
+
+  "err.emailTaken": "Email sudah terdaftar",
+  "err.emailNotConfirmed": "Email belum dikonfirmasi. Periksa kotak masuk email kamu.",
+  "err.emailFormat": "Format email tidak valid",
+  "err.badCredentials": "Email atau password salah",
+  "err.rateLimit": "Terlalu sering mencoba. Tunggu sebentar, lalu coba lagi.",
+  "err.weakPassword": "Kata sandi terlalu pendek atau lemah",
+  "err.signupClosed": "Pendaftaran sedang ditutup.",
+  "err.loginFailed": "Gagal masuk. Coba lagi.",
+  "err.registerFailed": "Gagal mendaftar. Coba lagi.",
+  "err.otpInvalid": "Kode salah atau sudah kedaluwarsa. Coba lagi.",
+
+  "toast.hello": "Halo, {name}!",
+  "toast.demoActive": "Mode demo aktif",
+  "toast.networkLogin": "Backend tidak terhubung. Mode demo aktif.",
+  "toast.networkErr": "Jaringan bermasalah. Coba lagi.",
+  "toast.reset": "Data dikembalikan",
+
+  "home.greet.morning": "Selamat pagi",
+  "home.greet.afternoon": "Selamat siang",
+  "home.greet.evening": "Selamat malam",
+  "home.greet.night": "Selamat malam",
+  "home.headline": "Satu kebiasaan kecil hari ini.",
+  "home.limitOver": "Melebihi budget",
+  "home.limitNear": "Mendekati batas",
+  "home.limitBody": "Pengeluaran bulan ini {spent} dari {budget} ({pct}%).",
+  "home.limitHintOver": "Budget harianmu kelewat. Lihat pola pengeluaranmu di Limit Warning.",
+  "home.limitHintWarn": "Jangan sampai kelewat: cek pola pengeluaranmu sekarang.",
+  "home.scoreLabel": "Financial Habit Score",
+  "home.scoreUp": "Naik {n} poin",
+  "home.scoreDown": "Turun {n} poin",
+  "home.scoreWeek": "dari minggu lalu.",
+  "home.progressTitle": "Progress hari ini",
+  "home.progressSub": "{done} dari {total} aktivitas harian selesai.",
+  "home.dailyLabel": "Daily Challenge",
+  "home.challengeDone": "Selesai hari ini ✓",
+  "home.challengeStart": "Mulai Challenge",
+  "home.quickTitle": "Quick Actions",
+  "home.quickExpenses": "Track Spending",
+  "home.quickBudget": "Limit Warning",
+  "home.quickSaving": "Saving Goals",
+  "home.quickDecide": "Decision Lab",
+  "home.quickLearn": "Learn",
+  "home.quickFamily": "Family Mission",
+  "home.quickLeaderboard": "Peringkat",
+  "home.quickAdmin": "Admin",
+  "home.statStreak": "Hari beruntun",
+  "home.statPoints": "Total poin",
+  "home.statChallenge": "Challenge",
+
+  "score.title": "Financial Habit Score",
+  "score.sr": "Skor {value} dari 100",
+  "score.week": "Minggu lalu {last} → minggu ini {now} ({diff})",
+  "score.breakdown": "Breakdown",
+  "score.progress": "Perkembanganmu",
+  "score.weekHint": "Skor 7 hari terakhir.",
+  "score.tStarter": "Financial Starter",
+  "score.tSteady": "Getting Steady",
+  "score.tSmart": "Financial Smart",
+  "score.tMaster": "Financial Master",
+  "level.beginner": "Financial Beginner",
+  "level.explorer": "Financial Explorer",
+  "level.achiever": "Financial Achiever",
+  "level.master": "Financial Master",
+
+  "learn.title": "Belajar",
+  "learn.sub": "Materi singkat, lalu langsung dipraktikkan.",
+  "learn.progressTitle": "Progress materi",
+  "learn.progressSub": "{done} dari {total} materi selesai.",
+  "learn.done": "Selesai ✓",
+  "learn.markDone": "Tandai selesai (+10 poin)",
+  "learn.readAgain": "Baca lagi",
+  "learn.study": "Pelajari",
+  "learn.count": "{done}/{n} materi",
+  "learn.doneTitle": "Materi selesai!",
+
+  "ch.title": "Daily Challenge",
+  "ch.sub": "Satu tantangan kecil setiap hari membentuk kebiasaan.",
+  "ch.minChips": "Pilih minimal 1 kategori yang kamu lakukan",
+  "ch.newPicked": "Tantangan baru dipilih",
+  "ch.other": "Tantangan lain",
+  "ch.shuffle": "Ganti tantangan",
+  "ch.doneToday": "Sudah selesai hari ini ✓",
+  "ch.doIt": "Selesaikan Challenge",
+  "ch.doneTitle": "Challenge selesai!",
+  "ch.doneMark": " · selesai ✓",
+
+  "ex.title": "Track Spending",
+  "ex.sub": "Catat ke mana saja uangmu pergi: kopi, batagor, transport, top-up.",
+  "ex.thisMonth": "Bulan ini",
+  "ex.aman": "Aman",
+  "ex.perhatian": "Perhatian",
+  "ex.berlebihan": "Berlebihan",
+  "ex.fromBudget": "dari budget {budget}",
+  "ex.pctHint": "{pct}% dari batas bulan ini.",
+  "ex.formTitle": "Catat pengeluaran",
+  "ex.phNote": "Catatan (opsional)",
+  "ex.btnAdd": "Tambah pengeluaran (+5 poin)",
+  "ex.history": "Riwayat",
+  "ex.empty": "Belum ada pengeluaran bulan ini.",
+  "ex.errAmount": "Masukkan nominal lebih dari 0",
+  "ex.added": "Pengeluaran dicatat",
+  "ex.delete": "Hapus",
+
+  "bu.title": "Limit Warning",
+  "bu.sub": "Ketahui saat pengeluaranmu mulai di luar kendali, sebelum dompetmu menangis.",
+  "bu.loading": "Memuat data budget...",
+  "bu.safeTag": "Aman",
+  "bu.safeTitle": "Pengeluaranmu masih terkendali.",
+  "bu.safeHint": "Kamu belum mendekati batas budget bulan ini. Pertahankan ritme ini.",
+  "bu.warnTag": "Perhatian",
+  "bu.warnTitle": "Pengeluaranmu mulai di luar kendali.",
+  "bu.warnHint": "Kamu sudah memakai sebagian besar budget bulan ini. Sisa hari ini tidak banyak. Kendalikan sebelum dompetmu menangis.",
+  "bu.overTag": "Berlebihan",
+  "bu.overTitle": "Budget bulan ini sudah lewat.",
+  "bu.overHint": "Pengeluaranmu melewati batas. Fokuskan sisa bulan ini untuk menahan pengeluaran non-kebutuhan.",
+  "bu.noneTag": "Belum diatur",
+  "bu.noneTitle": "Atur budget bulananmu.",
+  "bu.noneHint": "Tentukan batas agar aplikasi bisa memberi peringatan.",
+  "bu.formTitle": "Budget bulanan",
+  "bu.fieldLabel": "Besaran budget (Rp)",
+  "bu.fromSpent": "dari {budget} · {pct}%",
+  "bu.btnSave": "Simpan budget",
+  "bu.saved": "Budget disimpan",
+  "bu.err": "Masukkan budget lebih dari 0",
+  "bu.level": "Level: {a} (<80%), {b} (80-100%), {c} (>100%). Aplikasi otomatis menandai kondisimu di halaman Home.",
+
+  "sv.title": "Saving Goals",
+  "sv.sub": "Atur tujuan, pantau kemajuan, dan tetap termotivasi menabung.",
+  "sv.fieldDaily": "Uang ditabung per hari (Rp)",
+  "sv.fieldDays": "Jumlah hari",
+  "sv.btnSimulate": "Hitung simulasi",
+  "sv.simUpdated": "Simulasi diperbarui",
+  "sv.res1day": "1 hari",
+  "sv.res1week": "1 minggu",
+  "sv.res1month": "1 bulan",
+  "sv.res1year": "1 tahun",
+  "sv.emptyHint": "Masukkan nominal tabungan harian untuk melihat hasilnya.",
+  "sv.inDays": "Dalam {days} hari kamu mengumpulkan {total}.",
+  "sv.remaining": "Sisa target {remain} tercapai dalam sekitar {days} hari.",
+  "sv.goalTitle": "Saving Goal",
+  "sv.target": "Target",
+  "sv.collected": "Terkumpul",
+  "sv.goalDone": "Target tercapai. Saatnya membuat target baru.",
+  "sv.pctToGoal": "{pct}% menuju target. Sisa {remain}.",
+  "sv.phAdd": "Tambah tabungan",
+  "sv.btnAdd": "Tambah",
+  "sv.phTarget": "Ubah target",
+  "sv.btnSaveTarget": "Simpan target",
+  "sv.added": "Tabungan bertambah",
+  "sv.targetSaved": "Target disimpan: {value}",
+  "sv.err": "Masukkan nominal lebih dari 0",
+
+  "de.title": "Decision Lab",
+  "de.sub": "Tidak ada jawaban \"benar\" tunggal. Lihat dampaknya.",
+  "de.caseOf": "Kasus {n} dari {total}",
+  "de.ptsGain": "+{n} poin",
+  "de.noPts": "Tidak ada poin untuk pilihan ini",
+  "de.resultTitle": "Kamu memilih {choice}",
+  "de.next": "Kasus berikutnya",
+
+  "fa.title": "Family Mission",
+  "fa.sub": "Misi yang dikerjakan bersama keluarga di rumah.",
+  "fa.budget": "Budget",
+  "fa.duration": "Durasi",
+  "fa.status": "Status",
+  "fa.done": "Selesai",
+  "fa.running": "Berjalan",
+  "fa.doneLabel": "Misi selesai ✓",
+  "fa.complete": "Complete Mission",
+  "fa.success": "Misi keluarga selesai!",
+
+  "pf.title": "Profil",
+  "pf.streak": "Streak",
+  "pf.challenge": "Challenge",
+  "pf.points": "Poin",
+  "pf.badges": "Badges",
+  "pf.data": "Data",
+  "pf.demoNote": "Mode demo. Data disimpan di browser ini saja.",
+  "pf.liveNote": "Data tersinkron ke akunmu.",
+  "pf.resetBtn": "Reset Demo Data",
+  "pf.logout": "Keluar",
+  "pf.language": "Bahasa",
+  "pf.languageSub": "Pilih bahasa aplikasi.",
+  "pf.resetConfirm": "Kembalikan semua data ke kondisi awal?",
+
+  "lb.title": "Peringkat",
+  "lb.sub": "Peringkat dihitung dari total poin. Semakin banyak kebiasaan baik, makin tinggi posisimu.",
+  "lb.posTitle": "Posisimu",
+  "lb.myPos": "Kamu berada di peringkat ke-{rank} dari {total} pemain.",
+  "lb.streak": "streak {n}",
+  "lb.empty": "Belum ada pemain.",
+  "lb.loading": "Memuat papan skor...",
+
+  "ad.title": "Panel Admin",
+  "ad.forbidden": "Halaman ini hanya bisa diakses akun admin.",
+  "ad.totalUsers": "Total user",
+  "ad.transactions": "Transaksi",
+  "ad.activeToday": "Aktif hari ini",
+  "ad.avgTitle": "Rata-rata pengguna",
+  "ad.avgScore": "Skor finansial",
+  "ad.avgPoints": "Poin",
+  "ad.avgStreak": "Hari beruntun",
+  "ad.spent": "Nilai pengeluaran tercatat: {value}",
+  "ad.users": "Pengguna",
+  "ad.promote": "Jadikan admin",
+  "ad.demote": "Turunkan",
+  "ad.confirmPromote": "Jadikan {name} menjadi admin?",
+  "ad.confirmDemote": "Turunkan {name} menjadi user?",
+  "ad.roleChanged": "Peran kamu diubah. Masuk lagi untuk memperbarui.",
+  "ad.activity": "Aktivitas terbaru",
+  "ad.emptyActivity": "Belum ada transaksi.",
+  "ad.userLine": "{points} poin · streak {streak} · {badges} badge · {done} challenge",
+};
+
+const UI_EN = {
+  "nav.home": "Home",
+  "nav.learn": "Learn",
+  "nav.challenge": "Challenge",
+  "nav.expenses": "Track Spending",
+  "nav.budget": "Budget",
+  "nav.saving": "Saving",
+  "nav.decide": "Decision Lab",
+  "nav.family": "Family",
+  "nav.score": "Score",
+  "nav.leaderboard": "Leaderboard",
+  "nav.profile": "Profile",
+  "nav.admin": "Admin",
+  "nav.mainMenu": "Main menu",
+  "nav.brandTag": "Financial habits for teens",
+  "nav.groupMain": "Main",
+  "nav.groupTools": "Tools",
+  "nav.demoBanner": "Demo mode (local data)",
+  "nav.openProfile": "Open profile",
+  "nav.user": "User",
+  "nav.userStat": "{points} points · streak {streak}",
+
+  "common.close": "Close",
+  "common.loading": "Loading...",
+  "common.minutes": "minutes",
+  "common.points": "points",
+
+  "auth.tagline": "SPEND SMART. SAVE BETTER. BEAT FOMO.",
+  "auth.taglineEn": "SPEND SMART. SAVE BETTER. BEAT FOMO.",
+  "auth.subtitle": "Manage your money without being boring.",
+  "auth.tabLogin": "Log in",
+  "auth.tabRegister": "Sign up",
+  "auth.phName": "Name",
+  "auth.phEmail": "Email",
+  "auth.phPassword": "Password (min. 6 characters)",
+  "auth.errName": "Name is required",
+  "auth.errEmail": "Email is required",
+  "auth.errEmailFormat": "Email format is invalid",
+  "auth.errPassShort": "Password must be at least 6 characters",
+  "auth.btnLogin": "Log in",
+  "auth.btnRegister": "Create account",
+  "auth.btnDemo": "Try demo mode without an account",
+  "auth.language": "Language",
+
+  "auth.oVerTitle": "Verification code",
+  "auth.oVerSub": "We sent a 6-digit code to {email}. Enter it to finish signing up.",
+  "auth.oVerSent": "Verification code sent to your email.",
+  "auth.oVerResend": "Resend code",
+  "auth.oVerCooldown": "Resend in {s}s",
+  "auth.oVerVerify": "Verify",
+  "auth.oVerError": "Code is wrong or expired. Try again.",
+  "auth.oVerBack": "Change email",
+  "auth.oVerDigit": "Code box {n}",
+  "auth.mascotAlt": "FINHABIT mascot",
+
+  "err.emailTaken": "Email is already registered",
+  "toast.verified": "Account verified!",
+  "toast.error": "Something went wrong",
+  "toast.demoMode": "Demo mode active",
+  "toast.demoFallback": "Backend unreachable. Demo mode active.",
+  "toast.network": "Network issue. Try again.",
+  "err.emailNotConfirmed": "Email is not confirmed. Check your inbox.",
+  "err.emailFormat": "Email format is invalid",
+  "err.badCredentials": "Incorrect email or password",
+  "err.rateLimit": "Too many attempts. Please wait a moment, then try again.",
+  "err.weakPassword": "Password is too short or weak",
+  "err.signupClosed": "Sign-ups are currently closed.",
+  "err.loginFailed": "Sign-in failed. Try again.",
+  "err.registerFailed": "Sign-up failed. Try again.",
+  "err.otpInvalid": "Code is wrong or expired. Try again.",
+
+  "toast.hello": "Hello, {name}!",
+  "toast.demoActive": "Demo mode active",
+  "toast.networkLogin": "Backend unreachable. Demo mode active.",
+  "toast.networkErr": "Network problem. Try again.",
+  "toast.reset": "Data reset",
+
+  "home.greet.morning": "Good morning",
+  "home.greet.afternoon": "Good afternoon",
+  "home.greet.evening": "Good evening",
+  "home.greet.night": "Good night",
+  "home.headline": "One small habit today.",
+  "home.limitOver": "Over budget",
+  "home.limitNear": "Close to the limit",
+  "home.limitBody": "This month you spent {spent} of {budget} ({pct}%).",
+  "home.limitHintOver": "You are past your budget. Check your spending pattern in Limit Warning.",
+  "home.limitHintWarn": "Do not go over: review your spending now.",
+  "home.scoreLabel": "Financial Habit Score",
+  "home.scoreUp": "Up {n} points",
+  "home.scoreDown": "Down {n} points",
+  "home.scoreWeek": "from last week.",
+  "home.progressTitle": "Today's progress",
+  "home.progressSub": "{done} of {total} daily activities done.",
+  "home.dailyLabel": "Daily Challenge",
+  "home.challengeDone": "Done today ✓",
+  "home.challengeStart": "Start Challenge",
+  "home.quickTitle": "Quick Actions",
+  "home.quickExpenses": "Track Spending",
+  "home.quickBudget": "Limit Warning",
+  "home.quickSaving": "Saving Goals",
+  "home.quickDecide": "Decision Lab",
+  "home.quickLearn": "Learn",
+  "home.quickFamily": "Family Mission",
+  "home.quickLeaderboard": "Leaderboard",
+  "home.quickAdmin": "Admin",
+  "home.statStreak": "Day streak",
+  "home.statPoints": "Total points",
+  "home.statChallenge": "Challenge",
+
+  "score.title": "Financial Habit Score",
+  "score.sr": "Score {value} out of 100",
+  "score.week": "Last week {last} → this week {now} ({diff})",
+  "score.breakdown": "Breakdown",
+  "score.progress": "Your Progress",
+  "score.weekHint": "Score for the last 7 days.",
+  "score.tStarter": "Financial Starter",
+  "score.tSteady": "Getting Steady",
+  "score.tSmart": "Financial Smart",
+  "score.tMaster": "Financial Master",
+  "level.beginner": "Financial Beginner",
+  "level.explorer": "Financial Explorer",
+  "level.achiever": "Financial Achiever",
+  "level.master": "Financial Master",
+
+  "learn.title": "Learn",
+  "learn.sub": "Short lessons, then put them into practice.",
+  "learn.progressTitle": "Lesson progress",
+  "learn.progressSub": "{done} of {total} lessons done.",
+  "learn.done": "Done ✓",
+  "learn.markDone": "Mark done (+10 points)",
+  "learn.readAgain": "Read again",
+  "learn.study": "Study",
+  "learn.count": "{done}/{n} lessons",
+  "learn.doneTitle": "Lesson finished!",
+
+  "ch.title": "Daily Challenge",
+  "ch.sub": "One small challenge every day builds a habit.",
+  "ch.minChips": "Pick at least 1 category you completed",
+  "ch.newPicked": "New challenge picked",
+  "ch.other": "Other challenges",
+  "ch.shuffle": "Pick another",
+  "ch.doneToday": "Already done today ✓",
+  "ch.doIt": "Complete Challenge",
+  "ch.doneTitle": "Challenge completed!",
+  "ch.doneMark": " · done ✓",
+
+  "ex.title": "Track Spending",
+  "ex.sub": "Track where your money goes: snacks, rides, top-ups.",
+  "ex.thisMonth": "This month",
+  "ex.aman": "Safe",
+  "ex.perhatian": "Watch out",
+  "ex.berlebihan": "Over the top",
+  "ex.fromBudget": "of budget {budget}",
+  "ex.pctHint": "{pct}% of the monthly limit.",
+  "ex.formTitle": "Add expense",
+  "ex.phNote": "Note (optional)",
+  "ex.btnAdd": "Add expense (+5 points)",
+  "ex.history": "History",
+  "ex.empty": "No expenses this month.",
+  "ex.errAmount": "Enter an amount above 0",
+  "ex.added": "Expense recorded",
+  "ex.delete": "Delete",
+
+  "bu.title": "Limit Warning",
+  "bu.sub": "Know when your spending gets out of hand before your wallet cries.",
+  "bu.loading": "Loading budget data...",
+  "bu.safeTag": "Safe",
+  "bu.safeTitle": "Your spending is under control.",
+  "bu.safeHint": "You are nowhere near your monthly budget. Keep the pace.",
+  "bu.warnTag": "Watch out",
+  "bu.warnTitle": "Your spending is getting out of hand.",
+  "bu.warnHint": "You have used most of the monthly budget. Not much is left. Tighten up before your wallet cries.",
+  "bu.overTag": "Over the top",
+  "bu.overTitle": "The monthly budget is already over.",
+  "bu.overHint": "You went past the limit. Focus the rest of the month on non-essential spending.",
+  "bu.noneTag": "Not set",
+  "bu.noneTitle": "Set your monthly budget.",
+  "bu.noneHint": "Set a limit so the app can warn you.",
+  "bu.formTitle": "Monthly budget",
+  "bu.fieldLabel": "Budget amount (Rp)",
+  "bu.fromSpent": "of {budget} · {pct}%",
+  "bu.btnSave": "Save budget",
+  "bu.saved": "Budget saved",
+  "bu.err": "Enter a budget above 0",
+  "bu.level": "Levels: {a} (<80%), {b} (80-100%), {c} (>100%). The app marks your status on Home automatically.",
+
+  "sv.title": "Saving Goals",
+  "sv.sub": "Set a goal, track progress, stay motivated.",
+  "sv.fieldDaily": "Saved per day (Rp)",
+  "sv.fieldDays": "Number of days",
+  "sv.btnSimulate": "Run simulation",
+  "sv.simUpdated": "Simulation updated",
+  "sv.res1day": "1 day",
+  "sv.res1week": "1 week",
+  "sv.res1month": "1 month",
+  "sv.res1year": "1 year",
+  "sv.emptyHint": "Enter a daily saving amount to see the result.",
+  "sv.inDays": "In {days} days you will save {total}.",
+  "sv.remaining": "The remaining {remain} of your goal will take about {days} days.",
+  "sv.goalTitle": "Saving Goal",
+  "sv.target": "Target",
+  "sv.collected": "Collected",
+  "sv.goalDone": "Target reached. Time for a new one.",
+  "sv.pctToGoal": "{pct}% toward the goal. {remain} left.",
+  "sv.phAdd": "Add savings",
+  "sv.btnAdd": "Add",
+  "sv.phTarget": "Change target",
+  "sv.btnSaveTarget": "Save target",
+  "sv.added": "Savings added",
+  "sv.targetSaved": "Target saved: {value}",
+  "sv.err": "Enter an amount above 0",
+
+  "de.title": "Decision Lab",
+  "de.sub": "There is no single \"right\" answer. See the impact.",
+  "de.caseOf": "Case {n} of {total}",
+  "de.ptsGain": "+{n} points",
+  "de.noPts": "No points for this choice",
+  "de.resultTitle": "You chose {choice}",
+  "de.next": "Next case",
+
+  "fa.title": "Family Mission",
+  "fa.sub": "Missions you do with your family at home.",
+  "fa.budget": "Budget",
+  "fa.duration": "Duration",
+  "fa.status": "Status",
+  "fa.done": "Done",
+  "fa.running": "In progress",
+  "fa.doneLabel": "Mission done ✓",
+  "fa.complete": "Complete Mission",
+  "fa.success": "Family mission complete!",
+
+  "pf.title": "Profile",
+  "pf.streak": "Streak",
+  "pf.challenge": "Challenge",
+  "pf.points": "Points",
+  "pf.badges": "Badges",
+  "pf.data": "Data",
+  "pf.demoNote": "Demo mode. Data is stored only in this browser.",
+  "pf.liveNote": "Data is synced to your account.",
+  "pf.resetBtn": "Reset Demo Data",
+  "pf.logout": "Log out",
+  "pf.language": "Language",
+  "pf.languageSub": "Choose the app language.",
+  "pf.resetConfirm": "Reset all data to its initial state?",
+
+  "lb.title": "Leaderboard",
+  "lb.sub": "Ranking is based on total points. The more good habits, the higher you go.",
+  "lb.posTitle": "Your position",
+  "lb.myPos": "You are at rank #{rank} of {total} players.",
+  "lb.streak": "streak {n}",
+  "lb.empty": "No players yet.",
+  "lb.loading": "Loading leaderboard...",
+
+  "ad.title": "Admin Panel",
+  "ad.forbidden": "This page is only for admin accounts.",
+  "ad.totalUsers": "Total users",
+  "ad.transactions": "Transactions",
+  "ad.activeToday": "Active today",
+  "ad.avgTitle": "User averages",
+  "ad.avgScore": "Financial score",
+  "ad.avgPoints": "Points",
+  "ad.avgStreak": "Day streak",
+  "ad.spent": "Total recorded spending: {value}",
+  "ad.users": "Users",
+  "ad.promote": "Make admin",
+  "ad.demote": "Demote",
+  "ad.confirmPromote": "Make {name} an admin?",
+  "ad.confirmDemote": "Demote {name} to user?",
+  "ad.roleChanged": "Your role changed. Log in again to refresh.",
+  "ad.activity": "Recent activity",
+  "ad.emptyActivity": "No transactions yet.",
+  "ad.userLine": "{points} points · streak {streak} · {badges} badge · {done} challenge",
+};
+
+const TOPICS_ID = [
+  {
+    id: "saving",
+    icon: "piggy",
+    title: "Menabung",
+    desc: "Menabung adalah kebiasaan menyisihkan sebagian uang untuk tujuan tertentu.",
+    lessons: [
+      { id: "sav1", title: "Menabung itu keputusan, bukan sisa", body: "Menabung bukan uang yang tersisa di akhir hari, tapi uang yang kamu sisihkan di awal. Begitu menerima uang saku, pisahkan dulu bagian tabungan, baru sisanya dipakai." },
+      { id: "sav2", title: "Aturan 20% uang saku", body: "Coba sisihkan 20% dari uang saku. Kalau uang sakumu Rp25.000 per hari, berarti Rp5.000 masuk tabungan. Dalam satu bulan sekolah, itu sekitar Rp100.000." },
+      { id: "sav3", title: "Pisahkan tempatnya", body: "Uang tabungan yang bercampur dengan uang jajan hampir selalu terpakai. Gunakan amplop, celengan, atau rekening terpisah supaya tidak tergoda." }
+    ]
+  },
+  {
+    id: "spending",
+    icon: "cart",
+    title: "Belanja Cerdas",
+    desc: "Membelanjakan uang untuk hal yang benar-benar kamu butuhkan dan hargai.",
+    lessons: [
+      { id: "sp1", title: "Kebutuhan vs keinginan", body: "Kebutuhan membuatmu tetap berfungsi: makan, transportasi, alat sekolah. Keinginan membuatmu senang sesaat. Keduanya boleh, tapi kebutuhan didahulukan." },
+      { id: "sp2", title: "Jeda 24 jam", body: "Untuk pembelian di atas Rp50.000 yang tidak mendesak, tunggu satu hari. Kalau besok kamu masih menginginkannya, kemungkinan itu memang bernilai untukmu." },
+      { id: "sp3", title: "Hitung dalam jam, bukan rupiah", body: "Kalau kamu menabung Rp5.000 per hari, minuman Rp25.000 sama dengan 5 hari menabung. Cara ini membuat harga terasa lebih nyata." }
+    ]
+  },
+  {
+    id: "budget",
+    icon: "clipboard",
+    title: "Anggaran",
+    desc: "Merencanakan ke mana uangmu pergi sebelum uang itu habis.",
+    lessons: [
+      { id: "bd1", title: "Pola 50-30-20 versi pelajar", body: "50% kebutuhan harian (makan, transport), 30% keinginan (jajan, hiburan), 20% tabungan. Sesuaikan angkanya dengan kondisimu." },
+      { id: "bd2", title: "Catat 7 hari", body: "Sebelum membuat anggaran, catat pengeluaran selama seminggu. Kebanyakan orang kaget melihat total jajannya." },
+      { id: "bd3", title: "Anggaran boleh meleset", body: "Anggaran adalah rencana, bukan hukuman. Kalau meleset, perbaiki angkanya minggu depan, jangan berhenti mencatat." }
+    ]
+  },
+  {
+    id: "goal",
+    icon: "target",
+    title: "Target",
+    desc: "Tujuan yang jelas membuat menabung terasa masuk akal.",
+    lessons: [
+      { id: "gl1", title: "Tujuan yang spesifik", body: "\"Ingin menabung\" terlalu kabur. \"Sepatu futsal Rp300.000 dalam 3 bulan\" jelas: berarti Rp3.400 per hari." },
+      { id: "gl2", title: "Pecah jadi target kecil", body: "Target Rp300.000 terasa jauh. Pecah jadi Rp25.000 per minggu selama 12 minggu, lalu rayakan setiap 25% tercapai." },
+      { id: "gl3", title: "Tulis dan lihat setiap hari", body: "Tujuan yang ditulis dan terlihat (di buku, di dinding, di aplikasi) jauh lebih sering tercapai daripada yang hanya dipikirkan." }
+    ]
+  },
+  {
+    id: "risk",
+    icon: "shield",
+    title: "Kewaspadaan Risiko",
+    desc: "Mengenali tawaran yang berisiko, penipuan, dan pengeluaran mendadak.",
+    lessons: [
+      { id: "rs1", title: "Dana darurat kecil", body: "Sisihkan sedikit uang untuk hal tak terduga: fotokopi mendadak, ban bocor, atau ongkos pulang. Rp50.000 sudah membantu." },
+      { id: "rs2", title: "Untung besar, cepat, pasti", body: "Tiga kata itu muncul bersamaan hampir selalu berarti penipuan. Keuntungan yang tinggi selalu datang bersama risiko yang tinggi." },
+      { id: "rs3", title: "Jangan bagikan data pribadi", body: "OTP, PIN, dan foto kartu tidak pernah diminta oleh pihak resmi. Sekali dibagikan, uangmu bisa hilang dalam hitungan detik." }
+    ]
+  }
+];
+
+const TOPICS_EN = [
+  {
+    id: "saving",
+    icon: "piggy",
+    title: "Saving",
+    desc: "Saving is the habit of setting aside part of your money for a purpose.",
+    lessons: [
+      { id: "sav1", title: "Saving is a decision, not a leftover", body: "Saving is not the money left at the end of the day, but the money you put aside first. When you get your allowance, split the savings part first, then use the rest." },
+      { id: "sav2", title: "The 20% rule", body: "Try setting aside 20% of your allowance. If you get Rp25.000 a day, that means Rp5.000 goes into savings. Over one school month, that is around Rp100.000." },
+      { id: "sav3", title: "Keep it separate", body: "Savings mixed with spending money almost always get spent. Use an envelope, a piggy bank, or a separate account so you are not tempted." }
+    ]
+  },
+  {
+    id: "spending",
+    icon: "cart",
+    title: "Smart Spending",
+    desc: "Spending money on things you really need and value.",
+    lessons: [
+      { id: "sp1", title: "Needs vs wants", body: "Needs keep you going: food, transport, school gear. Wants make you happy for a moment. Both are fine, but needs come first." },
+      { id: "sp2", title: "The 24-hour pause", body: "For purchases above Rp50.000 that are not urgent, wait one day. If you still want it tomorrow, it is probably worth it." },
+      { id: "sp3", title: "Think in days, not rupiah", body: "If you save Rp5.000 a day, a Rp25.000 drink equals 5 days of saving. That makes the price feel more real." }
+    ]
+  },
+  {
+    id: "budget",
+    icon: "clipboard",
+    title: "Budgeting",
+    desc: "Planning where your money goes before it runs out.",
+    lessons: [
+      { id: "bd1", title: "The student 50-30-20", body: "50% daily needs (food, transport), 30% wants (snacks, fun), 20% savings. Adjust the numbers to your situation." },
+      { id: "bd2", title: "Track 7 days", body: "Before making a budget, record your spending for a week. Most people are shocked by their snack total." },
+      { id: "bd3", title: "Budgets can miss", body: "A budget is a plan, not a punishment. If you miss, fix the numbers next week, do not stop tracking." }
+    ]
+  },
+  {
+    id: "goal",
+    icon: "target",
+    title: "Goal Setting",
+    desc: "Clear goals make saving feel sensible.",
+    lessons: [
+      { id: "gl1", title: "Be specific", body: "\"I want to save\" is too vague. \"Futsal shoes, Rp300.000, in 3 months\" is clear: that is Rp3.400 a day." },
+      { id: "gl2", title: "Break it into small targets", body: "A Rp300.000 goal feels far. Break it into Rp25.000 a week for 12 weeks, and celebrate every 25%." },
+      { id: "gl3", title: "Write it down and look at it", body: "A goal that is written and visible (in a book, on the wall, in the app) is far more often achieved than one only kept in your head." }
+    ]
+  },
+  {
+    id: "risk",
+    icon: "shield",
+    title: "Risk Awareness",
+    desc: "Spotting risky offers, scams, and surprise expenses.",
+    lessons: [
+      { id: "rs1", title: "A small emergency fund", body: "Set aside a little money for the unexpected: sudden photocopies, a flat tire, or bus fare home. Rp50.000 already helps." },
+      { id: "rs2", title: "Big profit, fast, guaranteed", body: "Those three words together almost always mean a scam. High returns always come with high risk." },
+      { id: "rs3", title: "Never share personal data", body: "OTP, PIN, and card photos are never asked for by legitimate parties. Once shared, your money can vanish in seconds." }
+    ]
+  }
+];
+
+const CHALLENGES_ID = [
+  { id: "c1", cat: "Tracking", title: "Catat seluruh pengeluaranmu hari ini.", desc: "Tulis setiap pengeluaran, sekecil apa pun.", chips: ["Makanan", "Transport", "Belanja", "Lainnya"], min: 5, pts: 20, dim: "spending" },
+  { id: "c2", cat: "Menabung", title: "Sisihkan Rp5.000 sebelum jajan.", desc: "Pisahkan uang tabungan di awal hari, bukan di akhir.", chips: ["Celengan", "Amplop", "Rekening"], min: 3, pts: 25, dim: "saving" },
+  { id: "c3", cat: "Belanja", title: "Lewati satu pembelian impulsif.", desc: "Temukan satu hal yang ingin kamu beli hari ini, lalu tunda 24 jam.", chips: ["Jajan", "Game", "Online shop"], min: 2, pts: 20, dim: "spending" },
+  { id: "c4", cat: "Anggaran", title: "Buat anggaran jajan untuk besok.", desc: "Tentukan batas maksimal pengeluaran besok sebelum hari itu dimulai.", chips: ["Makanan", "Transport", "Lainnya"], min: 5, pts: 25, dim: "goal" },
+  { id: "c5", cat: "Risiko", title: "Periksa satu tawaran yang terlalu bagus.", desc: "Cari satu iklan atau pesan mencurigakan, lalu tulis kenapa itu berisiko.", chips: ["Chat", "Medsos", "Iklan"], min: 5, pts: 30, dim: "risk" },
+  { id: "c6", cat: "Target", title: "Perbarui progres saving goal-mu.", desc: "Masukkan tabungan hari ini ke halaman Menabung.", chips: ["Target", "Progress"], min: 3, pts: 20, dim: "goal" },
+  { id: "c7", cat: "Tracking", title: "Catat 3 pengeluaran tertinggi minggu ini.", desc: "Lihat kategori mana yang paling banyak menguras uangmu.", chips: ["Makanan", "Transport", "Game", "Lainnya"], min: 5, pts: 20, dim: "spending" },
+  { id: "c8", cat: "Menabung", title: "Terapkan pola 20% uang saku.", desc: "Sisihkan 20% dari uang saku hari ini sebelum dipakai.", chips: ["20%", "Uang saku"], min: 3, pts: 25, dim: "saving" },
+  { id: "c9", cat: "Belanja", title: "Jeda 24 jam sebelum beli.", desc: "Pilih satu barang di atas Rp50.000 dan tunda satu hari.", chips: ["Barang", "Harga", "H-1"], min: 2, pts: 20, dim: "spending" },
+  { id: "c10", cat: "Anggaran", title: "Bandingkan harga 3 tempat jualan.", desc: "Cek toko/warung lain untuk barang yang sama.", chips: ["Toko A", "Toko B", "Online"], min: 3, pts: 20, dim: "goal" },
+  { id: "c11", cat: "Risiko", title: "Identifikasi 1 tautan mencurigakan.", desc: "Jangan klik. Catat alamatnya dan kenapa mencurigakan.", chips: ["Chat", "SMS", "Email"], min: 5, pts: 30, dim: "risk" },
+  { id: "c12", cat: "Target", title: "Tulis target jangka pendekmu.", desc: "Satu barang/tujuan dengan nominal dan batas waktu.", chips: ["Target", "Nominal", "Deadline"], min: 5, pts: 20, dim: "goal" },
+  { id: "c13", cat: "Tracking", title: "Kelompokkan pengeluaran seminggu.", desc: "Buat ringkasan: berapa per kategori dalam 7 hari terakhir.", chips: ["Makanan", "Transport", "Game", "Lainnya"], min: 10, pts: 30, dim: "spending" },
+  { id: "c14", cat: "Menabung", title: "Amplop terpisah.", desc: "Siapkan satu amplop khusus tabungan dan labeli tujuannya.", chips: ["Amplop", "Label", "Uang"], min: 3, pts: 25, dim: "saving" },
+  { id: "c15", cat: "Belanja", title: "Hitung harga dalam hari menabung.", desc: "Ubah harga barang ke jumlah hari menabung Rp5.000.", chips: ["Rp5.000", "Hari", "Harga"], min: 3, pts: 20, dim: "spending" },
+  { id: "c16", cat: "Anggaran", title: "Pakai uang saku sampai besok tanpa jajan.", desc: "Habisi hari ini tanpa pembelian di luar rencana.", chips: ["Bekal", "Air minum", "Disiplin"], min: 5, pts: 30, dim: "goal" },
+  { id: "c17", cat: "Risiko", title: "Buat kata sandi yang kuat.", desc: "Ganti satu password lemah dengan yang panjang & unik.", chips: ["16+ karakter", "Password manager"], min: 5, pts: 25, dim: "risk" },
+  { id: "c18", cat: "Target", title: "Rayakan progres 25% tujuan.", desc: "Saat tabunganmu mencapai 1/4 target, rayakan tanpa boros.", chips: ["25%", "Target", "Hadiah kecil"], min: 3, pts: 20, dim: "goal" },
+  { id: "c19", cat: "Tracking", title: "Foto bukti transaksi.", desc: "Foto struk/history HP untuk 3 pengeluaran hari ini.", chips: ["Struk", "History", "3 transaksi"], min: 5, pts: 20, dim: "spending" },
+  { id: "c20", cat: "Menabung", title: "Tantangan senin tanpa beli.", desc: "Senin ini jangan beli apa pun di luar kebutuhan pokok.", chips: ["Senin", "Nol jajan", "Fokus"], min: 5, pts: 30, dim: "saving" },
+  { id: "c21", cat: "Belanja", title: "Cek diskon vs harga normal.", desc: "Pilih satu promo dan cek benar-benar lebih murah atau tidak.", chips: ["Diskon", "Harga asli", "Bandingkan"], min: 3, pts: 20, dim: "spending" },
+  { id: "c22", cat: "Anggaran", title: "Anggaran mingguan Rp50.000.", desc: "Buat pakem 1 minggu hanya memakai Rp50.000 untuk jajan.", chips: ["Rp50.000", "Minggu", "Catat"], min: 7, pts: 35, dim: "goal" },
+  { id: "c23", cat: "Risiko", title: "Verifikasi legalitas satu aplikasi.", desc: "Cek izin OJK/Play Store untuk aplikasi yang meminta uang.", chips: ["OJK", "Izin resmi", "Ulasan"], min: 5, pts: 30, dim: "risk" },
+  { id: "c24", cat: "Target", title: "Naikkan tabungan harian.", desc: "Tambah Rp1.000 setoran rutinmu mulai hari ini.", chips: ["+Rp1.000", "Rutin"], min: 3, pts: 20, dim: "saving" },
+  { id: "c25", cat: "Tracking", title: "Catat ulang semalam.", desc: "Bangun kebiasaan: isi catatan pengeluaran tadi malam.", chips: ["Malam", "Refleksi"], min: 5, pts: 20, dim: "spending" },
+  { id: "c26", cat: "Menabung", title: "Celengan visual.", desc: "Gambar/bagan progres tabungan dan tempel di kamar.", chips: ["Bagan", "Tempel", "Terlihat"], min: 3, pts: 25, dim: "goal" },
+  { id: "c27", cat: "Belanja", title: "Jajanan rumahan.", desc: "Ganti satu jajan di luar dengan camilan dari rumah.", chips: ["Bekal", "Camilan"], min: 2, pts: 15, dim: "spending" },
+  { id: "c28", cat: "Anggaran", title: "Jangan pinjam uang hari ini.", desc: "Kelola dengan sisa yang ada tanpa utang/nyicil sekarang.", chips: ["Tanpa utang", "Sisa"], min: 5, pts: 25, dim: "goal" },
+  { id: "c29", cat: "Risiko", title: "Jangan bagikan OTP/PIN.", desc: "Tolak satu permintaan data pribadi yang mencurigakan.", chips: ["OTP", "PIN", "Tolak"], min: 3, pts: 30, dim: "risk" },
+  { id: "c30", cat: "Target", title: "Review target bulanan.", desc: "Cek tujuan bulan ini: tercapai, kurang, atau perlu diubah?", chips: ["Review", "Refleksi", "Perbaiki"], min: 5, pts: 25, dim: "goal" }
+];
+
+const CHALLENGES_EN = [
+  { id: "c1", cat: "Tracking", title: "Track every expense today.", desc: "Write down every expense, no matter how small.", chips: ["Food", "Transport", "Shopping", "Others"], min: 5, pts: 20, dim: "spending" },
+  { id: "c2", cat: "Saving", title: "Set aside Rp5.000 before snacking.", desc: "Separate your savings at the start of the day, not the end.", chips: ["Piggy bank", "Envelope", "Account"], min: 3, pts: 25, dim: "saving" },
+  { id: "c3", cat: "Spending", title: "Skip one impulse purchase.", desc: "Find one thing you want to buy today, then wait 24 hours.", chips: ["Snack", "Game", "Online shop"], min: 2, pts: 20, dim: "spending" },
+  { id: "c4", cat: "Budgeting", title: "Plan tomorrow's pocket money.", desc: "Set the max you will spend tomorrow before the day begins.", chips: ["Food", "Transport", "Others"], min: 5, pts: 25, dim: "goal" },
+  { id: "c5", cat: "Risk", title: "Review one too-good-to-be-true offer.", desc: "Find one suspicious ad or message and write why it is risky.", chips: ["Chat", "Social media", "Ads"], min: 5, pts: 30, dim: "risk" },
+  { id: "c6", cat: "Goal", title: "Update your saving goal progress.", desc: "Enter today's savings on the Saving page.", chips: ["Target", "Progress"], min: 3, pts: 20, dim: "goal" },
+  { id: "c7", cat: "Tracking", title: "Note your 3 biggest expenses this week.", desc: "See which category drains your money the most.", chips: ["Food", "Transport", "Game", "Others"], min: 5, pts: 20, dim: "spending" },
+  { id: "c8", cat: "Saving", title: "Apply the 20% allowance rule.", desc: "Set aside 20% of today's allowance before spending.", chips: ["20%", "Allowance"], min: 3, pts: 25, dim: "saving" },
+  { id: "c9", cat: "Spending", title: "Pause 24 hours before buying.", desc: "Pick one item above Rp50.000 and wait one day.", chips: ["Item", "Price", "D-1"], min: 2, pts: 20, dim: "spending" },
+  { id: "c10", cat: "Budgeting", title: "Compare prices at 3 places.", desc: "Check another store for the same item.", chips: ["Store A", "Store B", "Online"], min: 3, pts: 20, dim: "goal" },
+  { id: "c11", cat: "Risk", title: "Spot 1 suspicious link.", desc: "Do not click. Note the address and why it looks suspicious.", chips: ["Chat", "SMS", "Email"], min: 5, pts: 30, dim: "risk" },
+  { id: "c12", cat: "Goal", title: "Write a short-term goal.", desc: "One item or goal with an amount and a deadline.", chips: ["Goal", "Amount", "Deadline"], min: 5, pts: 20, dim: "goal" },
+  { id: "c13", cat: "Tracking", title: "Group this week's spending.", desc: "Summarize how much per category in the last 7 days.", chips: ["Food", "Transport", "Game", "Others"], min: 10, pts: 30, dim: "spending" },
+  { id: "c14", cat: "Saving", title: "A separate envelope.", desc: "Prepare one envelope just for savings and label its purpose.", chips: ["Envelope", "Label", "Cash"], min: 3, pts: 25, dim: "saving" },
+  { id: "c15", cat: "Spending", title: "Price in saving days.", desc: "Convert an item's price into days of saving Rp5.000.", chips: ["Rp5.000", "Days", "Price"], min: 3, pts: 20, dim: "spending" },
+  { id: "c16", cat: "Budgeting", title: "Use today's allowance without snacking.", desc: "Get through the day with no unplanned purchases.", chips: ["Packed food", "Water", "Discipline"], min: 5, pts: 30, dim: "goal" },
+  { id: "c17", cat: "Risk", title: "Create a strong password.", desc: "Replace one weak password with a long, unique one.", chips: ["16+ chars", "Password manager"], min: 5, pts: 25, dim: "risk" },
+  { id: "c18", cat: "Goal", title: "Celebrate 25% progress.", desc: "When savings reach 1/4 of the goal, celebrate without splurging.", chips: ["25%", "Goal", "Small reward"], min: 3, pts: 20, dim: "goal" },
+  { id: "c19", cat: "Tracking", title: "Snap a receipt.", desc: "Photo a receipt or phone history for 3 expenses today.", chips: ["Receipt", "History", "3 transactions"], min: 5, pts: 20, dim: "spending" },
+  { id: "c20", cat: "Saving", title: "No-shopping Monday.", desc: "Do not buy anything beyond core needs this Monday.", chips: ["Monday", "Zero snacks", "Focus"], min: 5, pts: 30, dim: "saving" },
+  { id: "c21", cat: "Spending", title: "Check the discount vs the real price.", desc: "Pick one promo and check if it is really cheaper.", chips: ["Discount", "Real price", "Compare"], min: 3, pts: 20, dim: "spending" },
+  { id: "c22", cat: "Budgeting", title: "A Rp50.000 weekly budget.", desc: "Spend at most Rp50.000 on snacks for one week.", chips: ["Rp50.000", "Week", "Track"], min: 7, pts: 35, dim: "goal" },
+  { id: "c23", cat: "Risk", title: "Check an app's legitimacy.", desc: "Verify OJK/Play Store approval for an app asking for money.", chips: ["OJK", "Official license", "Reviews"], min: 5, pts: 30, dim: "risk" },
+  { id: "c24", cat: "Goal", title: "Raise your daily savings.", desc: "Add Rp1.000 to your regular deposit starting today.", chips: ["+Rp1.000", "Regular"], min: 3, pts: 20, dim: "saving" },
+  { id: "c25", cat: "Tracking", title: "Record last night.", desc: "Build the habit: fill in your expenses from last night.", chips: ["Night", "Reflect"], min: 5, pts: 20, dim: "spending" },
+  { id: "c26", cat: "Saving", title: "A visual piggy bank.", desc: "Draw a progress chart and stick it in your room.", chips: ["Chart", "Stick", "Visible"], min: 3, pts: 25, dim: "goal" },
+  { id: "c27", cat: "Spending", title: "Home snacks.", desc: "Swap one outside snack for something from home.", chips: ["Packed", "Snack"], min: 2, pts: 15, dim: "spending" },
+  { id: "c28", cat: "Budgeting", title: "No borrowing today.", desc: "Manage with what you have, no debt or installments now.", chips: ["No debt", "Leftover"], min: 5, pts: 25, dim: "goal" },
+  { id: "c29", cat: "Risk", title: "Do not share OTP/PIN.", desc: "Refuse one suspicious request for personal data.", chips: ["OTP", "PIN", "Refuse"], min: 3, pts: 30, dim: "risk" },
+  { id: "c30", cat: "Goal", title: "Review your monthly goal.", desc: "Check this month's goal: met, short, or needs changing?", chips: ["Review", "Reflect", "Fix"], min: 5, pts: 25, dim: "goal" }
+];
+
+const CASES_ID = [
+  {
+    text: "Kamu memiliki Rp50.000. Temanmu mengajak membeli minuman seharga Rp25.000, tetapi kamu sedang menabung untuk membeli barang seharga Rp300.000.",
+    options: [
+      { label: "Ikut membeli karena semua teman membeli.", consequence: "Uangmu tersisa Rp25.000 dan tabungan tidak bertambah hari ini.", impact: "Saldo −Rp25.000 · Target mundur ± 5 hari", lesson: "Tekanan teman adalah pengeluaran yang paling sering tidak disadari. Ikut sesekali tidak masalah, tapi kalau menjadi kebiasaan mingguan, biayanya Rp100.000 per bulan.", pts: 5, dim: "decision", d: 0 },
+      { label: "Tidak membeli.", consequence: "Rp25.000 bisa langsung masuk tabungan dan targetmu lebih cepat 5 hari.", impact: "Tabungan +Rp25.000 · Target maju ± 5 hari", lesson: "Pilihan paling hemat, tapi perhatikan sisi sosialnya. Kamu tetap bisa ikut berkumpul tanpa harus membeli.", pts: 20, dim: "saving", d: 3 },
+      { label: "Mencari alternatif yang lebih murah.", consequence: "Kamu ikut berkumpul dengan minuman Rp8.000, dan Rp17.000 tetap bisa ditabung.", impact: "Tabungan +Rp17.000 · Tetap ikut bersama teman", lesson: "Sering kali pilihan terbaik bukan ya atau tidak, melainkan versi yang lebih murah dari keinginan yang sama.", pts: 25, dim: "decision", d: 3 },
+      { label: "Membeli tetapi mengurangi pengeluaran lain.", consequence: "Tabungan tetap aman, tapi kamu harus disiplin memotong jajan berikutnya.", impact: "Tabungan tetap · Butuh disiplin tambahan", lesson: "Ini berhasil kalau kamu benar-benar mencatat. Tanpa catatan, 'nanti dikurangi' biasanya tidak pernah terjadi.", pts: 15, dim: "spending", d: 2 }
+    ]
+  },
+  {
+    text: "Kamu menerima uang kaget Rp200.000 dari saudaramu. Ponselmu masih berfungsi, tetapi model terbaru sedang diskon dan teman-temanmu sudah memilikinya.",
+    options: [
+      { label: "Langsung membeli aksesori ponsel baru.", consequence: "Uang habis dalam satu hari dan tidak ada yang tersisa untuk kebutuhan mendadak.", impact: "Saldo −Rp200.000 · Dana darurat kosong", lesson: "Uang tak terduga paling mudah menguap karena terasa 'bukan uang sendiri'. Perlakukan sama seperti uang hasil menabung.", pts: 5, dim: "decision", d: 0 },
+      { label: "Menabung seluruhnya untuk target yang sudah ada.", consequence: "Targetmu melompat jauh dan hampir tercapai.", impact: "Tabungan +Rp200.000 · Target 67% tercapai", lesson: "Sangat kuat secara finansial. Pastikan target itu memang masih kamu inginkan agar motivasimu tidak padam.", pts: 25, dim: "saving", d: 3 },
+      { label: "Membagi: 50% tabungan, 30% kebutuhan, 20% hiburan.", consequence: "Rp100.000 masuk tabungan, Rp60.000 untuk kebutuhan sekolah, Rp40.000 untuk senang-senang.", impact: "Tabungan +Rp100.000 · Keseimbangan terjaga", lesson: "Pembagian membuat kebiasaan menabung bertahan lama karena kamu tidak merasa dihukum.", pts: 30, dim: "goal", d: 4 },
+      { label: "Meminjamkan seluruhnya ke teman tanpa kesepakatan.", consequence: "Uangmu tidak jelas kapan kembali dan hubungan bisa menjadi canggung.", impact: "Saldo tidak pasti · Risiko tinggi", lesson: "Meminjamkan uang bukan hal buruk, tetapi tanpa jumlah dan tanggal yang disepakati, risikonya ditanggung kamu sendiri.", pts: 5, dim: "risk", d: 0 }
+    ]
+  },
+  {
+    text: "Sebuah akun menawarkan 'modal Rp100.000 jadi Rp500.000 dalam 3 hari, dijamin pasti untung'. Banyak komentar mengaku berhasil.",
+    options: [
+      { label: "Ikut karena banyak yang mengaku berhasil.", consequence: "Uangmu kemungkinan besar hilang dan akun tersebut tidak bisa dihubungi lagi.", impact: "Saldo −Rp100.000 · Risiko penipuan", lesson: "Komentar bisa dibeli atau dibuat oleh akun palsu. Bukti sosial bukan bukti keamanan.", pts: 0, dim: "risk", d: 0 },
+      { label: "Mencoba dengan uang kecil dulu.", consequence: "Kamu mungkin menerima 'untung' kecil pertama, lalu diajak menyetor lebih besar.", impact: "Saldo −Rp20.000 · Umpan awal", lesson: "Keuntungan pertama yang kecil adalah taktik klasik untuk membangun kepercayaan sebelum kerugian besar.", pts: 5, dim: "risk", d: 1 },
+      { label: "Menolak dan mencari tahu dulu legalitasnya.", consequence: "Uangmu aman dan kamu belajar memeriksa izin resmi sebelum menaruh uang.", impact: "Saldo aman · Kemampuan verifikasi naik", lesson: "Keuntungan tinggi yang 'dijamin pasti' bertentangan dengan prinsip dasar investasi: makin tinggi imbal hasil, makin tinggi risikonya.", pts: 30, dim: "risk", d: 4 },
+      { label: "Melaporkan akun tersebut dan memberi tahu teman.", consequence: "Kamu melindungi diri sendiri sekaligus orang lain di sekitarmu.", impact: "Saldo aman · Dampak positif ke sekitar", lesson: "Literasi keuangan menjadi jauh lebih kuat ketika dibagikan, bukan disimpan sendiri.", pts: 30, dim: "risk", d: 4 }
+    ]
+  }
+];
+
+const CASES_EN = [
+  {
+    text: "You have Rp50.000. A friend asks you to buy a Rp25.000 drink together, but you are saving up for something that costs Rp300.000.",
+    options: [
+      { label: "Buy along because everyone else is.", consequence: "You are left with Rp25.000 and your savings do not grow today.", impact: "Balance −Rp25.000 · Goal delayed ± 5 days", lesson: "Peer pressure is the most unnoticed expense. Joining once is fine, but as a weekly habit it costs Rp100.000 a month.", pts: 5, dim: "decision", d: 0 },
+      { label: "Do not buy.", consequence: "Rp25.000 can go straight into savings and your goal gets 5 days closer.", impact: "Savings +Rp25.000 · Goal 5 days sooner", lesson: "The most frugal choice, but mind the social side. You can still hang out without buying.", pts: 20, dim: "saving", d: 3 },
+      { label: "Find a cheaper alternative.", consequence: "You join the group with an Rp8.000 drink, and Rp17.000 still goes to savings.", impact: "Savings +Rp17.000 · Still with friends", lesson: "Often the best choice is not yes or no, but a cheaper version of the same want.", pts: 25, dim: "decision", d: 3 },
+      { label: "Buy it but cut other spending.", consequence: "Savings stay safe, but you must stay disciplined on your next snacks.", impact: "Savings safe · Extra discipline needed", lesson: "This works only if you really track. Without tracking, 'I will cut back later' usually never happens.", pts: 15, dim: "spending", d: 2 }
+    ]
+  },
+  {
+    text: "A relative gives you Rp200.000 as a surprise gift. Your phone works fine, but the newest model is on sale and all your friends have it.",
+    options: [
+      { label: "Buy new phone accessories right away.", consequence: "The money is gone in one day and nothing is left for emergencies.", impact: "Balance −Rp200.000 · No emergency fund", lesson: "Unexpected money evaporates fastest because it feels like 'free money'. Treat it like money you saved.", pts: 5, dim: "decision", d: 0 },
+      { label: "Save it all for your existing goal.", consequence: "Your goal jumps far ahead and is almost reached.", impact: "Savings +Rp200.000 · Goal 67% reached", lesson: "Very strong financially. Make sure the goal is still what you want so your motivation stays.", pts: 25, dim: "saving", d: 3 },
+      { label: "Split it: 50% savings, 30% needs, 20% fun.", consequence: "Rp100.000 to savings, Rp60.000 for school needs, Rp40.000 for fun.", impact: "Savings +Rp100.000 · Balance kept", lesson: "Splitting keeps the saving habit going because you do not feel punished.", pts: 30, dim: "goal", d: 4 },
+      { label: "Lend it all to a friend without an agreement.", consequence: "It is unclear when you will get it back and the friendship may get awkward.", impact: "Balance uncertain · High risk", lesson: "Lending money is not bad, but without an agreed amount and date, you carry the risk.", pts: 5, dim: "risk", d: 0 }
+    ]
+  },
+  {
+    text: "An account offers 'turn Rp100.000 into Rp500.000 in 3 days, guaranteed profit'. Many comments claim it worked.",
+    options: [
+      { label: "Join because many say it worked.", consequence: "Your money is likely gone and the account cannot be reached anymore.", impact: "Balance −Rp100.000 · Scam risk", lesson: "Comments can be bought or posted by fake accounts. Social proof is not proof of safety.", pts: 0, dim: "risk", d: 0 },
+      { label: "Try with a small amount first.", consequence: "You may receive a small first 'profit', then be invited to deposit more.", impact: "Balance −Rp20.000 · Bait", lesson: "A small first profit is a classic tactic to build trust before a big loss.", pts: 5, dim: "risk", d: 1 },
+      { label: "Refuse and check its legitimacy first.", consequence: "Your money is safe and you learn to check official licenses before investing.", impact: "Balance safe · Better verification skills", lesson: "High guaranteed returns contradict basic investing: the higher the return, the higher the risk.", pts: 30, dim: "risk", d: 4 },
+      { label: "Report the account and warn friends.", consequence: "You protect yourself and the people around you.", impact: "Balance safe · Positive impact around you", lesson: "Financial literacy becomes far stronger when shared, not kept to yourself.", pts: 30, dim: "risk", d: 4 }
+    ]
+  }
+];
+
+const MISSIONS_ID = [
+  { id: "m1", icon: "bag", title: "Family Shopping Challenge", desc: "Susun daftar belanja mingguan bersama orang tua dan tetap di dalam budget.", budget: "Rp100.000", time: "1 hari", reward: "Budget Keeper · +40 poin", pts: 40, dim: "spending" },
+  { id: "m2", icon: "soup", title: "Bekal Seminggu", desc: "Bandingkan biaya jajan di sekolah dengan membawa bekal selama 5 hari.", budget: "Rp75.000", time: "5 hari", reward: "Meal Planner · +50 poin", pts: 50, dim: "saving" },
+  { id: "m3", icon: "bulb", title: "Hemat Listrik Keluarga", desc: "Catat pemakaian listrik dan cari 3 kebiasaan yang bisa dihemat bulan ini.", budget: "Bebas", time: "7 hari", reward: "Energy Saver · +45 poin", pts: 45, dim: "goal" }
+];
+
+const MISSIONS_EN = [
+  { id: "m1", icon: "bag", title: "Family Shopping Challenge", desc: "Plan a weekly grocery list with your parents and stay within budget.", budget: "Rp100.000", time: "1 day", reward: "Budget Keeper · +40 points", pts: 40, dim: "spending" },
+  { id: "m2", icon: "soup", title: "A Week of Packed Lunch", desc: "Compare school snack costs against packing lunch for 5 days.", budget: "Rp75.000", time: "5 days", reward: "Meal Planner · +50 points", pts: 50, dim: "saving" },
+  { id: "m3", icon: "bulb", title: "Family Electricity Savings", desc: "Track electricity use and find 3 habits to cut this month.", budget: "Free", time: "7 days", reward: "Energy Saver · +45 points", pts: 45, dim: "goal" }
+];
+
+const BADGES_ID = [
+  { id: "first-saver", icon: "trophy", name: "Penabung Pertama" },
+  { id: "streak-7", icon: "flame", name: "Streak 7 Hari" },
+  { id: "smart-saver", icon: "piggy", name: "Penabung Cerdas" },
+  { id: "tracker", icon: "receipt", name: "Pencatat Pengeluaran" },
+  { id: "scholar", icon: "book", name: "Cendekia (5 materi)" },
+  { id: "decider", icon: "scale", name: "Pengambil Keputusan" },
+  { id: "family-hero", icon: "users", name: "Pahlawan Keluarga" }
+];
+
+const BADGES_EN = [
+  { id: "first-saver", icon: "trophy", name: "First Saver" },
+  { id: "streak-7", icon: "flame", name: "7 Day Streak" },
+  { id: "smart-saver", icon: "piggy", name: "Smart Saver" },
+  { id: "tracker", icon: "receipt", name: "Spending Tracker" },
+  { id: "scholar", icon: "book", name: "Scholar (5 lessons)" },
+  { id: "decider", icon: "scale", name: "Decision Maker" },
+  { id: "family-hero", icon: "users", name: "Family Hero" }
+];
+
+const DIM_LABELS_ID = {
+  saving: "Menabung",
+  spending: "Belanja Cerdas",
+  decision: "Pengambilan Keputusan",
+  goal: "Penetapan Target",
+  risk: "Kewaspadaan Risiko"
+};
+
+const DIM_LABELS_EN = {
+  saving: "Saving",
+  spending: "Smart Spending",
+  decision: "Decision Making",
+  goal: "Goal Setting",
+  risk: "Risk Awareness"
+};
+
+const DAY_LABELS_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+const DAY_LABELS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const EXPENSE_CATEGORIES_ID = [
+  { id: "food", icon: "utensils", label: "Makanan" },
+  { id: "drink", icon: "coffee", label: "Minuman" },
+  { id: "transport", icon: "bus", label: "Transportasi" },
+  { id: "game", icon: "gamepad", label: "Game" },
+  { id: "shop", icon: "bag", label: "Belanja" },
+  { id: "other", icon: "package", label: "Lainnya" }
+];
+
+const EXPENSE_CATEGORIES_EN = [
+  { id: "food", icon: "utensils", label: "Food" },
+  { id: "drink", icon: "coffee", label: "Drinks" },
+  { id: "transport", icon: "bus", label: "Transport" },
+  { id: "game", icon: "gamepad", label: "Games" },
+  { id: "shop", icon: "bag", label: "Shopping" },
+  { id: "other", icon: "package", label: "Other" }
+];
+
+export const UI = { id: UI_ID, en: UI_EN };
+
+export const CONTENT = {
+  id: {
+    TOPICS: TOPICS_ID,
+    CHALLENGES: CHALLENGES_ID,
+    CASES: CASES_ID,
+    MISSIONS: MISSIONS_ID,
+    BADGES: BADGES_ID,
+    DIM_LABELS: DIM_LABELS_ID,
+    DAY_LABELS: DAY_LABELS_ID,
+    EXPENSE_CATEGORIES: EXPENSE_CATEGORIES_ID
+  },
+  en: {
+    TOPICS: TOPICS_EN,
+    CHALLENGES: CHALLENGES_EN,
+    CASES: CASES_EN,
+    MISSIONS: MISSIONS_EN,
+    BADGES: BADGES_EN,
+    DIM_LABELS: DIM_LABELS_EN,
+    DAY_LABELS: DAY_LABELS_EN,
+    EXPENSE_CATEGORIES: EXPENSE_CATEGORIES_EN
+  }
+};

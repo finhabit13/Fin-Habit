@@ -2,29 +2,14 @@ import { useEffect, useState } from "react";
 
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
+import { useI18n } from "../lib/i18n";
 import { rupiah } from "../lib/util";
 
-const STATUS_TEXT = {
-  safe: {
-    tag: "Aman",
-    title: "Pengeluaranmu masih terkendali.",
-    hint: "Kamu belum mendekati batas budget bulan ini. Pertahankan ritme ini."
-  },
-  warn: {
-    tag: "Perhatian",
-    title: "Pengeluaranmu mulai di luar kendali.",
-    hint: "Kamu sudah memakai sebagian besar budget bulan ini. Sisa hari ini tidak banyak. Kendalikan sebelum dompetmu menangis."
-  },
-  over: {
-    tag: "Berlebihan",
-    title: "Budget bulan ini sudah lewat.",
-    hint: "Pengeluaranmu melewati batas. Fokuskan sisa bulan ini untuk menahan pengeluaran non-kebutuhan."
-  },
-  none: { tag: "Belum diatur", title: "Atur budget bulananmu.", hint: "Tentukan batas agar aplikasi bisa memberi peringatan" }
-};
+const STATUS = ["safe", "warn", "over", "none"];
 
 export default function Budget() {
   const { run, showSuccess, showToast } = useApp();
+  const { t } = useI18n();
   const [data, setData] = useState(null);
   const [input, setInput] = useState("");
 
@@ -43,56 +28,56 @@ export default function Budget() {
     return (
       <>
         <BackLink />
-        <h1 className="page-title">Limit Warning</h1>
+        <h1 className="page-title">{t("bu.title")}</h1>
         <div className="card">
-          <p className="muted">Memuat data budget...</p>
+          <p className="muted">{t("bu.loading")}</p>
         </div>
       </>
     );
 
-  const st = STATUS_TEXT[data.status] || STATUS_TEXT.safe;
+  const status = STATUS.includes(data.status) ? data.status : "safe";
   const pctWidth = Math.min(100, data.pct);
 
   const save = async () => {
     const n = Number(input);
     if (!n || n <= 0) {
-      showToast("Masukkan budget lebih dari 0");
+      showToast(t("bu.err"));
       return;
     }
     const res = await run((s) => s.setBudget(n));
     if (!res.ok) return;
     setData(res.data);
     setInput("");
-    showSuccess("Budget disimpan", rupiah(n));
+    showSuccess(t("bu.saved"), rupiah(n));
   };
 
   return (
     <>
       <BackLink />
-      <h1 className="page-title">Limit Warning</h1>
-      <p className="muted">Ketahui saat pengeluaranmu mulai di luar kendali, sebelum dompetmu menangis.</p>
+      <h1 className="page-title">{t("bu.title")}</h1>
+      <p className="muted">{t("bu.sub")}</p>
 
       <div className="pair">
-        <div className={"card limiter " + data.status}>
-          <span className="tag">{st.tag}</span>
-          <p className="limiter-title">{st.title}</p>
+        <div className={"card limiter " + status}>
+          <span className="tag">{t("bu." + status + "Tag")}</span>
+          <p className="limiter-title">{t("bu." + status + "Title")}</p>
           <p className="limiter-total">{rupiah(data.spent)}</p>
           <p className="limiter-sub">
-            dari {rupiah(data.budget)} · {data.pct}%
+            {t("bu.fromSpent", { budget: rupiah(data.budget), pct: data.pct })}
           </p>
           <div className="bar">
             <span
-              className={"bar-fill " + (data.status === "over" ? "danger" : data.status === "warn" ? "warn" : "")}
+              className={"bar-fill " + (status === "over" ? "danger" : status === "warn" ? "warn" : "")}
               style={{ width: pctWidth + "%" }}
             />
           </div>
-          <p className="muted small">{st.hint}</p>
+          <p className="muted small">{t("bu." + status + "Hint")}</p>
         </div>
 
         <div className="card">
-          <h3 className="card-title">Budget bulanan</h3>
+          <h3 className="card-title">{t("bu.formTitle")}</h3>
           <label className="field">
-            <span>Besaran budget (Rp)</span>
+            <span>{t("bu.fieldLabel")}</span>
             <input
               type="number"
               value={input}
@@ -103,15 +88,18 @@ export default function Budget() {
             />
           </label>
           <button className="btn btn-primary" onClick={save}>
-            Simpan budget
+            {t("bu.btnSave")}
           </button>
         </div>
       </div>
 
       <div className="card soft-blue">
         <p className="muted small">
-          Level: <b>Aman</b> (&lt;80%), <b>Perhatian</b> (80-100%), <b>Berlebihan</b> (&gt;100%). Aplikasi
-          otomatis menandai kondisimu di halaman Home.
+          {t("bu.level", {
+            a: t("bu.safeTag"),
+            b: t("bu.warnTag"),
+            c: t("bu.overTag")
+          })}
         </p>
       </div>
     </>

@@ -5,6 +5,7 @@ import Phone from "./components/Phone";
 import Success from "./components/Success";
 import Toast from "./components/Toast";
 import { AppProvider, useApp } from "./context/AppContext";
+import { LangProvider } from "./lib/i18n";
 import Auth from "./pages/Auth";
 
 function Root() {
@@ -37,8 +38,10 @@ function Root() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <Root />
-    </AppProvider>
+    <LangProvider>
+      <AppProvider>
+        <Root />
+      </AppProvider>
+    </LangProvider>
   );
 }

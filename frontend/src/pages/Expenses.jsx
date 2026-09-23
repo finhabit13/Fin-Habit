@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 
-import Glyph from "../lib/glyphs";
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
-import { EXPENSE_CATEGORIES, categoryFor } from "../lib/data";
+import mascotUrl from "../assets/mascot.png";
+import { useI18n } from "../lib/i18n";
+import Glyph from "../lib/glyphs";
 import { budgetInfo, dayLabel, monthKey, rupiah, todayKey } from "../lib/util";
 
 export default function Expenses() {
   const { run, showSuccess, showToast } = useApp();
+  const { t, content, categoryInfo, lang } = useI18n();
   const [items, setItems] = useState([]);
   const [budget, setBudget] = useState(null);
   const [amount, setAmount] = useState("");
@@ -35,7 +37,7 @@ export default function Expenses() {
     e.preventDefault();
     const n = Number(amount);
     if (!n || n <= 0) {
-      showToast("Masukkan nominal lebih dari 0");
+      showToast(t("ex.errAmount"));
       return;
     }
     const res = await run((s) =>
@@ -44,7 +46,7 @@ export default function Expenses() {
     if (!res.ok) return;
     setAmount("");
     setNote("");
-    showSuccess("Pengeluaran dicatat", "+" + rupiah(n));
+    showSuccess(t("ex.added"), "+" + rupiah(n));
     load();
   };
 
@@ -65,28 +67,34 @@ export default function Expenses() {
   return (
     <>
       <BackLink />
-      <h1 className="page-title">Track Spending</h1>
-      <p className="muted">Catat ke mana saja uangmu pergi: kopi, batagor, transport, top-up.</p>
+      <h1 className="page-title">{t("ex.title")}</h1>
+      <p className="muted">{t("ex.sub")}</p>
 
       <div className="pair">
         <div className={"card meter-card " + info.status}>
           <div className="row-between">
-            <span className="meter-title">Bulan ini</span>
-            <span className="tag">{info.status === "safe" ? "Aman" : info.status === "warn" ? "Perhatian" : "Berlebihan"}</span>
+            <span className="meter-title">{t("ex.thisMonth")}</span>
+            <span className="tag">
+              {info.status === "safe"
+                ? t("ex.aman")
+                : info.status === "warn"
+                  ? t("ex.perhatian")
+                  : t("ex.berlebihan")}
+            </span>
           </div>
           <p className="meter-total">{rupiah(spent)}</p>
-          <p className="meter-sub">dari budget {rupiah(budget || 0)}</p>
+          <p className="meter-sub">{t("ex.fromBudget", { budget: rupiah(budget || 0) })}</p>
           <div className="bar">
             <span
               className={"bar-fill " + (info.status === "over" ? "danger" : info.status === "warn" ? "warn" : "")}
               style={{ width: Math.min(100, info.pct) + "%" }}
             />
           </div>
-          <p className="meter-hint">{info.pct}% dari batas bulan ini.</p>
+          <p className="meter-hint">{t("ex.pctHint", { pct: info.pct })}</p>
         </div>
 
         <form className="card" onSubmit={submit}>
-          <h3 className="card-title">Catat pengeluaran</h3>
+          <h3 className="card-title">{t("ex.formTitle")}</h3>
           <div className="exp-line">
             <input
               type="number"
@@ -97,7 +105,7 @@ export default function Expenses() {
               onChange={(e) => setAmount(e.target.value)}
             />
             <select value={category} onChange={(e) => setCategory(e.target.value)}>
-              {EXPENSE_CATEGORIES.map((c) => (
+              {content.EXPENSE_CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
                 </option>
@@ -106,25 +114,26 @@ export default function Expenses() {
           </div>
           <input
             type="text"
-            placeholder="Catatan (opsional)"
+            placeholder={t("ex.phNote")}
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
-          <button className="btn btn-primary">Tambah pengeluaran (+5 poin)</button>
+          <button className="btn btn-primary">{t("ex.btnAdd")}</button>
         </form>
       </div>
 
-      <h3 className="section-title">Riwayat</h3>
+      <h3 className="section-title">{t("ex.history")}</h3>
       {grouped.length === 0 && (
-        <div className="card">
-          <p className="muted small">Belum ada pengeluaran bulan ini.</p>
+        <div className="card empty-state">
+          <img className="mascot-empty" src={mascotUrl} alt={t("auth.mascotAlt")} />
+          <p className="muted small">{t("ex.empty")}</p>
         </div>
       )}
       {grouped.map(([date, list]) => (
         <div key={date}>
-          <p className="date-label">{dayLabel(date)}</p>
+          <p className="date-label">{dayLabel(date, lang)}</p>
           {list.map((e) => {
-            const cat = categoryFor(e.category);
+            const cat = categoryInfo(e.category);
             return (
               <div key={e.id} className="card expense-item">
                 <div className="exp-ico">
@@ -137,7 +146,7 @@ export default function Expenses() {
                 <div className="right">
                   <p className="exp-amount-nowrap">−{rupiah(e.amount)}</p>
                   <button className="exp-del" onClick={() => remove(e.id)}>
-                    Hapus
+                    {t("ex.delete")}
                   </button>
                 </div>
               </div>
