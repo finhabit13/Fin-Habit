@@ -51,6 +51,7 @@ export default function Auth() {
           {mode === "register" && (
             <input
               type="text"
+              autoComplete="name"
               placeholder="Nama"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -58,12 +59,14 @@ export default function Auth() {
           )}
           <input
             type="email"
+            autoComplete="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type="password"
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
             placeholder="Kata sandi (min. 6 karakter)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
