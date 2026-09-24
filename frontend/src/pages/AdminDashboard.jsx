@@ -8,7 +8,7 @@ import { dayLabel, rupiah } from "../lib/util";
 const MEDALS = { 0: "gold", 1: "silver", 2: "bronze" };
 
 export default function AdminDashboard() {
-  const { user, run, showToast } = useApp();
+  const { user, run, logout, showToast } = useApp();
   const { t, categoryInfo, content, lang } = useI18n();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -114,6 +114,9 @@ export default function AdminDashboard() {
           <span className="admin-badge">Admin</span>
           <button className="avatar" onClick={() => window.location.href = "/"}>
             {(user?.name || "A").trim().charAt(0).toUpperCase()}
+          </button>
+          <button className="btn btn-light small-btn" onClick={logout}>
+            {t("pf.logout")}
           </button>
         </div>
       </header>
