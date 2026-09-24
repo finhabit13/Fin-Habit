@@ -150,6 +150,7 @@ export function AppProvider({ children }) {
     const type = params.get("type");
     if ((token || tokenHash) && type) {
       await verifyMagicLink({ token, tokenHash, type });
+      setResolved(true);
       return;
     }
 
