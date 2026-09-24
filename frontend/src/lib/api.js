@@ -80,7 +80,8 @@ function toUser(row) {
     savingCurrent: Number(row.saving_current),
     monthlyBudget: Number(row.monthly_budget),
     lastActiveDay: row.last_active_day,
-    role: row.role || "user"
+    role: row.role || "user",
+    banned: !!row.banned
   };
 }
 
@@ -106,7 +107,8 @@ function toRow(user) {
     saving_current: user.savingCurrent,
     monthly_budget: user.monthlyBudget,
     last_active_day: user.lastActiveDay,
-    role: user.role || "user"
+    role: user.role || "user",
+    banned: !!user.banned
   };
 }
 
@@ -135,6 +137,13 @@ async function loadProfile(authUserId, tries = 0) {
     throw new ApiError(404, "Profil belum tersedia. Coba lagi sebentar.");
   }
   return toUser(data);
+}
+
+function assertNotBanned(user) {
+  if (user?.banned) {
+    throw new ApiError(403, "err.banned", "err.banned");
+  }
+  return user;
 }
 
 async function mutateUser(authUserId, fn) {
@@ -179,7 +188,8 @@ function freshUser(name) {
     savingCurrent: 0,
     monthlyBudget: 500000,
     lastActiveDay: null,
-    role: "user"
+    role: "user",
+    banned: false
   };
 }
 
@@ -229,7 +239,7 @@ export const api = {
       const { error: pu } = await c.auth.updateUser({ password });
       if (pu) throw new ApiError(500, pu.message);
     }
-    const user = await loadProfile(data.user.id);
+    const user = assertNotBanned(await loadProfile(data.user.id));
     const token = data.session?.access_token;
     if (token) setToken(token);
     return { token: token || null, user };
@@ -245,7 +255,7 @@ export const api = {
       const key = authErrorKey(error.message, "register");
       throw new ApiError(401, key, key);
     }
-    const user = await loadProfile(data.user.id);
+    const user = assertNotBanned(await loadProfile(data.user.id));
     const token = data.session?.access_token;
     if (token) setToken(token);
     return { token: token || null, user };
@@ -259,6 +269,10 @@ export const api = {
       throw new ApiError(401, key, key);
     }
     const user = await loadProfile(data.user.id);
+    if (user.banned) {
+      await c.auth.signOut().catch(() => {});
+      throw new ApiError(403, "err.banned", "err.banned");
+    }
     setToken(data.session.access_token);
     return { token: data.session.access_token, user };
   },
@@ -266,7 +280,7 @@ export const api = {
   me: async () => {
     const c = needClient();
     const au = await sessionUser();
-    return loadProfile(au.id);
+    return assertNotBanned(await loadProfile(au.id));
   },
 
   patchUser: async (body) => {
@@ -518,7 +532,7 @@ export const api = {
     await sessionUser();
     const { data, error } = await c
       .from("expenses")
-      .select("id, amount, category, note, date, user_id")
+      .select("id, amount, category, date, user_id")
       .order("date", { ascending: false })
       .limit(50);
     if (error) throw new ApiError(500, error.message);
@@ -526,7 +540,6 @@ export const api = {
       id: e.id,
       amount: Number(e.amount),
       category: e.category,
-      note: e.note,
       date: e.date,
       userId: e.user_id
     }));
@@ -538,5 +551,61 @@ export const api = {
     const { error } = await c.from("profiles").update({ role }).eq("id", id);
     if (error) throw new ApiError(500, error.message);
     return { ok: true };
+  },
+
+  adminSetBanned: async ({ id, banned }) => {
+    const c = needClient();
+    await sessionUser();
+    const { error } = await c.from("profiles").update({ banned }).eq("id", id);
+    if (error) throw new ApiError(500, error.message);
+    return { ok: true };
+  },
+
+  adminLeaderboard: async () => {
+    const c = needClient();
+    await sessionUser();
+    const data = await c.rpc("admin_leaderboard");
+    if (data.error) throw new ApiError(500, data.error.message);
+    if (!data.data) throw new ApiError(403, "Akses admin ditolak");
+    return (data.data || []).map((u) => ({
+      id: u.id,
+      name: u.name,
+      points: Number(u.points),
+      streak: Number(u.streak),
+      badges: u.badges || [],
+      role: u.role || "user",
+      banned: !!u.banned,
+      rank: Number(u.rank)
+    }));
+  },
+
+  adminProfile: async ({ id }) => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c.rpc("admin_profile", { p_user: id });
+    if (error) throw new ApiError(500, error.message);
+    if (!data) throw new ApiError(403, "Akses admin ditolak");
+    return {
+      id: data.id,
+      name: data.name,
+      points: Number(data.points),
+      streak: Number(data.streak),
+      challengesDone: Number(data.challenges_done),
+      badges: data.badges || [],
+      dims: data.dims || {},
+      weekly: data.weekly || [],
+      savingGoal: Number(data.saving_goal),
+      savingCurrent: Number(data.saving_current),
+      monthlyBudget: Number(data.monthly_budget),
+      lastActiveDay: data.last_active_day,
+      createdAt: data.created_at,
+      role: data.role || "user",
+      banned: !!data.banned,
+      spendByCat: (data.spend_by_cat || []).map((x) => ({
+        category: x.category,
+        total: Number(x.total),
+        count: Number(x.n)
+      }))
+    };
   }
 };

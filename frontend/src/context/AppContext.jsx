@@ -147,13 +147,18 @@ export function AppProvider({ children }) {
         setResolved(true);
         return;
       } catch (err) {
-        if (err instanceof NetworkError) {
+        if (err instanceof ApiError && err.status === 403) {
+          clearToken();
+          setDemo(false);
+          setUser(null);
+          if (err.key === "err.banned") showToast(t("err.banned"));
+        } else if (err instanceof NetworkError) {
           enterDemo();
         }
       }
     }
     setResolved(true);
-  }, [enterDemo, verifyMagicLink]);
+  }, [enterDemo, verifyMagicLink, showToast, t]);
 
   const auth = useCallback(
     async (kind, body) => {

@@ -289,6 +289,18 @@ export const store = {
 
   async adminSetRole() {
     throw new Error("Akses admin ditolak");
+  },
+
+  async adminSetBanned() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminLeaderboard() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminProfile() {
+    throw new Error("Akses admin ditolak");
   }
 };
 

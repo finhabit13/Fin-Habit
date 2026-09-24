@@ -178,3 +178,116 @@ drop trigger if exists profiles_guard_role on public.profiles;
 create trigger profiles_guard_role
 before update on public.profiles
 for each row execute function public.guard_role_change();
+
+-- ============================================================
+-- MIGRASI 3 - Ban/Suspend + Leaderboard & Detail admin (Sep 2026)
+-- JALANKAN DARI BARIS INI.
+-- ============================================================
+
+-- Akun ditangguhkan (banned): user tidak bisa masuk/mengakses aplikasi.
+alter table public.profiles
+  add column if not exists banned boolean not null default false;
+
+-- Hanya admin yang boleh mengubah status banned (cegah user menonaktifkan dirinya).
+create or replace function public.guard_banned_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.banned is distinct from old.banned and not public.is_admin() then
+    raise exception 'Status banned hanya bisa diubah oleh admin.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_banned on public.profiles;
+create trigger profiles_guard_banned
+before update on public.profiles
+for each row execute function public.guard_banned_change();
+
+-- Leaderboard admin: semua profil (termasuk admin & banned) diurutkan poin.
+-- Dipakai halaman admin untuk tampilan papan peringkat lengkap.
+create or replace function public.admin_leaderboard()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v jsonb;
+begin
+  if not public.is_admin() then
+    return null;
+  end if;
+
+  select coalesce(jsonb_agg(row_to_json(u) order by u.points desc), '[]'::jsonb)
+  from (
+    select
+      id, name, points, streak, badges,
+      role, banned,
+      row_number() over (order by points desc) as rank
+    from public.profiles
+  ) u into v;
+
+  return v;
+end;
+$$;
+
+revoke all on function public.admin_leaderboard() from public, anon;
+grant execute on function public.admin_leaderboard() to authenticated;
+
+-- Profil lengkap satu user untuk modal detail admin.
+-- TIDAK mengembalikan catatan pribadi (expenses.note) — hanya agregat grafik.
+create or replace function public.admin_profile(p_user uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v jsonb;
+begin
+  if not public.is_admin() then
+    return null;
+  end if;
+
+  select jsonb_build_object(
+    'id', p.id,
+    'name', p.name,
+    'points', p.points,
+    'streak', p.streak,
+    'challenges_done', p.challenges_done,
+    'badges', p.badges,
+    'dims', p.dims,
+    'weekly', p.weekly,
+    'saving_goal', p.saving_goal,
+    'saving_current', p.saving_current,
+    'monthly_budget', p.monthly_budget,
+    'last_active_day', p.last_active_day,
+    'created_at', p.created_at,
+    'role', p.role,
+    'banned', p.banned,
+    'spend_by_cat', (
+      select coalesce(jsonb_agg(row_to_json(x) order by x.total desc), '[]'::jsonb)
+      from (
+        select e.category, round(sum(e.amount)::numeric, 0) as total, count(*) as n
+        from public.expenses e
+        where e.user_id = p_user
+        group by e.category
+      ) x
+    )
+  ) into v
+  from public.profiles p
+  where p.id = p_user;
+
+  return v;
+end;
+$$;
+
+revoke all on function public.admin_profile() from public, anon;
+grant execute on function public.admin_profile() to authenticated;
