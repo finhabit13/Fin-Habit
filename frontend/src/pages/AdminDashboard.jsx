@@ -19,23 +19,35 @@ export default function AdminDashboard() {
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
-    run(async (s) => {
-      setStats(await s.adminStats());
-      setUsers(await s.adminUsers());
-      setExpenses(await s.adminExpenses());
-      const b = await s.adminLeaderboard();
-      setBoard(b || []);
-      setLoading(false);
-      return null;
-    });
+    const load = async () => {
+      await run(async (s) => {
+        const [st, us, ex, bd] = await Promise.allSettled([
+          s.adminStats(),
+          s.adminUsers(),
+          s.adminExpenses(),
+          s.adminLeaderboard()
+        ]);
+        if (st.status === "fulfilled") setStats(st.value);
+        if (us.status === "fulfilled") setUsers(us.value || []);
+        if (ex.status === "fulfilled") setExpenses(ex.value || []);
+        if (bd.status === "fulfilled") setBoard(bd.value || []);
+        setLoading(false);
+        return null;
+      });
+    };
+    load();
   }, []);
 
   useEffect(() => {
     if (!detailId) return;
     setProfile(null);
     run(async (s) => {
-      const p = await s.adminProfile({ id: detailId });
-      setProfile(p || null);
+      try {
+        const p = await s.adminProfile({ id: detailId });
+        setProfile(p || null);
+      } catch {
+        setProfile(null);
+      }
       return null;
     });
   }, [detailId]);
