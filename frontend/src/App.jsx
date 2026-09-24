@@ -38,7 +38,7 @@ function Root() {
   }
 
   if (user.role === "admin") {
-    window.location.href = "/admin";
+    window.location.replace("/admin");
     return null;
   }
 

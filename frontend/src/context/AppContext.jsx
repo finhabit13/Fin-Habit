@@ -79,7 +79,7 @@ export function AppProvider({ children }) {
       if (!demo) setToken(data.token);
       setUser(data.user);
       if (data.user.role === "admin") {
-        window.location.href = "/admin";
+        window.location.replace("/admin");
         return { ok: true };
       }
       setPage("home");
@@ -139,8 +139,9 @@ export function AppProvider({ children }) {
         const data = await api.me();
         setToken(data.token || null);
         setUser(data);
-        if (data.role === "admin") {
-          window.location.href = "/admin";
+        const onAdminPath = window.location.pathname.startsWith("/admin");
+        if (data.role === "admin" && !onAdminPath) {
+          window.location.replace("/admin");
           return;
         }
         setResolved(true);
@@ -165,7 +166,7 @@ export function AppProvider({ children }) {
         if (!demo) setToken(data.token);
         setUser(data.user);
         if (data.user.role === "admin") {
-          window.location.href = "/admin";
+          window.location.replace("/admin");
           return { ok: true };
         }
         setPage("home");
@@ -206,7 +207,7 @@ export function AppProvider({ children }) {
         if (data.token) setToken(data.token);
         setUser(data.user);
         if (data.user.role === "admin") {
-          window.location.href = "/admin";
+          window.location.replace("/admin");
           return { ok: true };
         }
         setPage("home");

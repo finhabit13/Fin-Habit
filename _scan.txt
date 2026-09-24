@@ -1,0 +1,138 @@
+1:import Glyph from "../lib/glyphs";
+2:import { useApp } from "../context/AppContext";
+3:import { useI18n } from "../lib/i18n";
+4:
+5:import Home from "../pages/Home";
+6:import Learn from "../pages/Learn";
+7:import Challenge from "../pages/Challenge";
+8:import Expenses from "../pages/Expenses";
+9:import Budget from "../pages/Budget";
+10:import Saving from "../pages/Saving";
+11:import Decision from "../pages/Decision";
+12:import Family from "../pages/Family";
+13:import Score from "../pages/Score";
+14:import Profile from "../pages/Profile";
+15:import Leaderboard from "../pages/Leaderboard";
+16:import Admin from "../pages/Admin";
+17:
+18:const PAGES = {
+19:  home: Home,
+20:  learn: Learn,
+21:  challenge: Challenge,
+22:  expenses: Expenses,
+23:  budget: Budget,
+24:  saving: Saving,
+25:  decide: Decision,
+26:  family: Family,
+27:  score: Score,
+28:  profile: Profile,
+29:  leaderboard: Leaderboard,
+30:  admin: Admin
+31:};
+32:
+33:const NAV = [
+34:  { id: "home", icon: "home" },
+35:  { id: "learn", icon: "book" },
+36:  { id: "challenge", icon: "target" },
+37:  { id: "score", icon: "chart" },
+38:  { id: "leaderboard", icon: "crown" },
+39:  { id: "profile", icon: "user" }
+40:];
+41:
+42:const TOOLS = [
+43:  { id: "expenses", icon: "receipt" },
+44:  { id: "budget", icon: "sliders" },
+45:  { id: "saving", icon: "piggy" },
+46:  { id: "decide", icon: "scale" },
+47:  { id: "family", icon: "users" }
+48:];
+49:
+50:export default function Phone() {
+51:  const { user, page, go, demo } = useApp();
+52:  const { t } = useI18n();
+53:  const Page = PAGES[page] || Home;
+54:  const initial = (user?.name || "B").trim().charAt(0).toUpperCase();
+55:
+56:  const renderLink = (n) => (
+57:    <li key={n.id}>
+58:      <button
+59:        className={"side-link" + (page === n.id ? " is-active" : "")}
+60:        onClick={() => go(n.id)}
+61:        aria-current={page === n.id ? "page" : undefined}
+62:      >
+63:        <span className="side-ico">
+64:          <Glyph name={n.icon} size={19} />
+65:        </span>
+66:        {t("nav." + n.id)}
+67:      </button>
+68:    </li>
+69:  );
+70:
+71:  return (
+72:    <div className="app">
+73:      <nav className="sidebar" aria-label={t("nav.mainMenu")}>
+74:        <div className="brand">
+75:          <span className="brand-mark">₣</span>
+76:          <span className="brand-name">FINHABIT</span>
+77:          <span className="brand-tag">{t("nav.brandTag")}</span>
+78:        </div>
+79:
+80:        <p className="nav-group-label">{t("nav.groupMain")}</p>
+81:        <ul className="side-nav">{NAV.map(renderLink)}</ul>
+82:
+83:        <p className="nav-group-label">{t("nav.groupTools")}</p>
+84:        <ul className="side-nav">
+85:          {TOOLS.map(renderLink)}
+86:          {user && user.role === "admin" && renderLink({ id: "admin", icon: "shieldCheck" })}
+87:        </ul>
+88:
+89:        <div className="side-foot">
+90:          {demo && <div className="demo-banner demo-banner-side">{t("nav.demoBanner")}</div>}
+91:          <div className="side-user">
+92:            <button className="avatar" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
+93:              {initial}
+94:            </button>
+95:            <div className="side-user-meta">
+96:              <p className="side-user-name">{user?.name || t("nav.user")}</p>
+97:              <p className="side-user-stat">
+98:                {t("nav.userStat", { points: user?.points ?? 0, streak: user?.streak ?? 0 })}
+99:              </p>
+100:            </div>
+101:          </div>
+102:        </div>
+103:      </nav>
+104:
+105:      <header className="topbar">
+106:        <div className="brand">
+107:          <span className="brand-mark">₣</span>
+108:          <span className="brand-name">FINHABIT</span>
+109:        </div>
+110:        <button className="avatar" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
+111:          {initial}
+112:        </button>
+113:      </header>
+114:
+115:      {demo && <div className="demo-banner demo-banner-mobile">{t("nav.demoBanner")}</div>}
+116:
+117:      <main className="screen-area" id="screenArea">
+118:        <Page />
+119:      </main>
+120:
+121:      <nav className="bottom-nav" aria-label={t("nav.mainMenu")}>
+122:        {NAV.map((n) => (
+123:          <button
+124:            key={n.id}
+125:            className={"nav-item" + (page === n.id ? " is-active" : "")}
+126:            onClick={() => go(n.id)}
+127:            aria-current={page === n.id ? "page" : undefined}
+128:          >
+129:            <span className="nav-ico">
+130:              <Glyph name={n.icon} size={21} />
+131:            </span>
+132:            <span className="nav-label">{t("nav." + n.id)}</span>
+133:          </button>
+134:        ))}
+135:      </nav>
+136:    </div>
+137:  );
+138:}
