@@ -45,6 +45,14 @@ export const clearToken = () => {
 
 export const hasToken = () => !!token;
 
+export const subscribeRecovery = (cb) => {
+  if (!client) return null;
+  const { data } = client.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") cb();
+  });
+  return data?.subscription || null;
+};
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function needClient() {
@@ -204,27 +212,59 @@ export const api = {
     }
   },
 
-  register: async ({ name, email }) => {
+  register: async ({ name, email, password }) => {
     const c = needClient();
-    const { error } = await c.auth.signInWithOtp({
+    const { data, error } = await c.auth.signUp({
       email,
-      options: { data: { name } }
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo: window.location.origin
+      }
     });
     if (error) {
       const status = /invalid email|unable to validate|email address|missing email/i.test(error.message) ? 400 : 500;
       const key = authErrorKey(error.message, "register");
       throw new ApiError(status, key, key);
     }
+    if (data?.session) {
+      const user = assertNotBanned(await loadProfile(data.user.id));
+      setToken(data.session.access_token);
+      return { token: data.session.access_token, user };
+    }
     return { needVerification: true, email };
   },
 
-  resendCode: async ({ email, name }) => {
+  resendCode: async ({ email, name, password }) => {
     const c = needClient();
-    const { error } = await c.auth.signInWithOtp({
+    const { error } = await c.auth.signUp({
       email,
-      options: { data: name ? { name } : undefined }
+      password,
+      options: {
+        data: name ? { name } : undefined,
+        emailRedirectTo: window.location.origin
+      }
     });
     if (error) throw new ApiError(500, authErrorKey(error.message, "register"), authErrorKey(error.message, "register"));
+    return { ok: true };
+  },
+
+  resetPassword: async ({ email }) => {
+    const c = needClient();
+    const { error } = await c.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin
+    });
+    if (error) throw new ApiError(500, authErrorKey(error.message, "register"), authErrorKey(error.message, "register"));
+    return { ok: true, email };
+  },
+
+  updatePassword: async ({ password }) => {
+    const c = needClient();
+    const { error } = await c.auth.updateUser({ password });
+    if (error) {
+      const key = authErrorKey(error.message, "register");
+      throw new ApiError(500, key, key);
+    }
     return { ok: true };
   },
 

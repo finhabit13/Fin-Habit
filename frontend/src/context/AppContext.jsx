@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import { api, ApiError, NetworkError, clearToken, hasToken, setToken } from "../lib/api";
 import { useI18n } from "../lib/i18n";
@@ -17,6 +17,7 @@ export function AppProvider({ children }) {
   const [toastShow, setToastShow] = useState(false);
   const [success, setSuccess] = useState(null);
   const [modal, setModal] = useState(null);
+  const [recovering, setRecovering] = useState(false);
 
   const toastTimer = useRef(null);
   const successTimer = useRef(null);
@@ -97,6 +98,14 @@ export function AppProvider({ children }) {
       return { ok: false };
     }
   }, [demo, showToast, t, enterDemo]);
+
+  useEffect(() => {
+    let sub;
+    try {
+      sub = api.subscribeRecovery(() => setRecovering(true));
+    } catch {}
+    return () => sub?.unsubscribe?.();
+  }, []);
 
   /** Jalan kan aksi pada service aktif; tangani error & ambil user terbaru. */
   const run = useCallback(
@@ -198,6 +207,41 @@ export function AppProvider({ children }) {
     [demo, showToast, t]
   );
 
+  const resetPassword = useCallback(
+    async ({ email }) => {
+      try {
+        const target = demo ? store : api;
+        const data = await target.resetPassword({ email });
+        return { ok: true, email: data.email };
+      } catch (err) {
+        const key = err.key || null;
+        const msg = key ? t(key) : err.message || t("toast.error");
+        showToast(msg);
+        return { ok: false, message: msg, key };
+      }
+    },
+    [demo, showToast, t]
+  );
+
+  const updatePassword = useCallback(
+    async ({ password }) => {
+      try {
+        const target = demo ? store : api;
+        await target.updatePassword({ password });
+        setRecovering(false);
+        setUser(null);
+        showToast(t("toast.passwordUpdated"));
+        return { ok: true };
+      } catch (err) {
+        const key = err.key || null;
+        const msg = key ? t(key) : err.message || t("toast.error");
+        showToast(msg);
+        return { ok: false, message: msg, key };
+      }
+    },
+    [demo, showToast, t]
+  );
+
   const verify = useCallback(
     async (body) => {
       try {
@@ -251,6 +295,9 @@ export function AppProvider({ children }) {
     boot,
     auth,
     verify,
+    resetPassword,
+    updatePassword,
+    recovering,
     logout,
     enterDemo
   };

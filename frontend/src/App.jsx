@@ -10,7 +10,7 @@ import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 
 function Root() {
-  const { resolved, user, boot } = useApp();
+  const { resolved, user, recovering, boot } = useApp();
   const isAdminPath = window.location.pathname.startsWith("/admin");
 
   useEffect(() => {
@@ -25,6 +25,8 @@ function Root() {
       </div>
     );
   }
+
+  if (recovering) return <Auth recovery />;
 
   if (!user) return <Auth />;
 

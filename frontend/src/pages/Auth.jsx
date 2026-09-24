@@ -7,11 +7,12 @@ import { useI18n } from "../lib/i18n";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESEND_SECONDS = 60;
 
-export default function Auth() {
-  const { auth, enterDemo } = useApp();
+export default function Auth({ recovery }) {
+  const { auth, resetPassword, updatePassword, enterDemo } = useApp();
   const { t, lang, setLang } = useI18n();
 
   const [mode, setMode] = useState("login");
+  const [view, setView] = useState("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +34,33 @@ export default function Auth() {
     setMode(m);
     setError("");
     setMagicLinkSent(false);
+    setView("form");
+  };
+
+  const openForgot = () => {
+    setError("");
+    setView("forgot");
+  };
+
+  const submitForgot = async (e) => {
+    e.preventDefault();
+    const emailClean = email.trim();
+    if (!emailClean) {
+      setError(t("auth.errEmail"));
+      return;
+    }
+    if (!EMAIL_RE.test(emailClean)) {
+      setError(t("auth.errEmailFormat"));
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const res = await resetPassword({ email: emailClean });
+    if (res.ok) {
+      setView("forgotSent");
+      setSentEmail(emailClean);
+    }
+    setBusy(false);
   };
 
   const submit = async (e) => {
@@ -79,6 +107,21 @@ export default function Auth() {
     setResending(false);
   };
 
+  const submitRecovery = async (e) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      setError(t("auth.errPassShort"));
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const res = await updatePassword({ password });
+    if (res.ok) {
+      setPassword("");
+    }
+    setBusy(false);
+  };
+
   const backToForm = () => {
     setMagicLinkSent(false);
     setSentEmail("");
@@ -105,7 +148,32 @@ export default function Auth() {
         <p className="auth-tagline">{t("auth.tagline")}</p>
         <p className="auth-sub">{t("auth.subtitle")}</p>
 
-        {magicLinkSent ? (
+        {recovery ? (
+          <div className="verify-box">
+            <p className="verify-title">{t("auth.newPassTitle")}</p>
+            <p className="verify-note">{t("auth.newPassSub")}</p>
+            <form className="auth-form" onSubmit={submitRecovery} noValidate>
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder={t("auth.phPassword")}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError("");
+                }}
+              />
+              {error && (
+                <p className="auth-error" role="alert">
+                  {error}
+                </p>
+              )}
+              <button className="btn btn-primary" disabled={busy}>
+                {t("auth.newPassSave")}
+              </button>
+            </form>
+          </div>
+        ) : magicLinkSent ? (
           <div className="verify-box magic-link-sent">
             <div className="magic-link-icon">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -133,6 +201,45 @@ export default function Auth() {
                 {t("auth.oVerBack")}
               </button>
             </div>
+          </div>
+        ) : view === "forgot" || view === "forgotSent" ? (
+          <div className="verify-box">
+            <p className="verify-title">{t("auth.forgotTitle")}</p>
+            {view === "forgot" ? (
+              <>
+                <p className="verify-note">{t("auth.forgotSub")}</p>
+                <form className="auth-form" onSubmit={submitForgot} noValidate>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    placeholder={t("auth.phEmail")}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError("");
+                    }}
+                  />
+                  {error && (
+                    <p className="auth-error" role="alert">
+                      {error}
+                    </p>
+                  )}
+                  <button className="btn btn-primary" disabled={busy}>
+                    {t("auth.forgotSend")}
+                  </button>
+                </form>
+                <button className="btn btn-ghost center" onClick={() => setView("form")}>
+                  {t("auth.forgotBack")}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="verify-note">{t("auth.forgotSent", { email: sentEmail })}</p>
+                <button className="btn btn-ghost center" onClick={() => setView("form")}>
+                  {t("auth.forgotBack")}
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -193,6 +300,11 @@ export default function Auth() {
                 {mode === "login" ? t("auth.tabLogin") : t("auth.btnRegister")}
               </button>
             </form>
+            {mode === "login" && (
+              <button className="btn btn-ghost center slim" onClick={openForgot}>
+                {t("auth.forgot")}
+              </button>
+            )}
 
             <button className="btn btn-ghost center" onClick={() => enterDemo()}>
               {t("auth.btnDemo")}

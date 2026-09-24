@@ -125,6 +125,16 @@ export const store = {
     return { token: "demo", user: userView() };
   },
 
+  async resetPassword({ email }) {
+    await delay();
+    return { ok: true, email };
+  },
+
+  async updatePassword() {
+    await delay();
+    return { ok: true };
+  },
+
   async me() {
     await delay();
     return userView();
