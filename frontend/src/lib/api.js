@@ -249,6 +249,31 @@ export const api = {
     return { ok: true };
   },
 
+  signInWithOAuth: async (provider = "google") => {
+    const c = needClient();
+    const { error } = await c.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin }
+    });
+    if (error) {
+      const key = authErrorKey(error.message, "login");
+      throw new ApiError(500, key, key);
+    }
+    return { ok: true };
+  },
+
+  // Sesi OAuth tersimpan di klien Supabase; dipakai boot() agar sesi Google
+  // tetap dikenali walaupun finhabit_token belum diisi.
+  resumeSession: async () => {
+    if (!client) return null;
+    try {
+      const { data } = await client.auth.getSession();
+      return data?.session || null;
+    } catch {
+      return null;
+    }
+  },
+
   resetPassword: async ({ email }) => {
     const c = needClient();
     const { error } = await c.auth.resetPasswordForEmail(email, {

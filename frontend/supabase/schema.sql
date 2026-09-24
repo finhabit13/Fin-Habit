@@ -311,7 +311,7 @@ as $$
 begin
   if new.email_confirmed_at is not null then
     insert into public.profiles (id, name)
-    values (new.id, coalesce(new.raw_user_meta_data ->> 'name', 'Bailey'))
+    values (new.id, coalesce(new.raw_user_meta_data ->> 'name', new.raw_user_meta_data ->> 'full_name', 'Bailey'))
     on conflict (id) do nothing;
   end if;
   return new;
@@ -334,7 +334,7 @@ begin
   if new.email_confirmed_at is not null
      and old.email_confirmed_at is null then
     insert into public.profiles (id, name)
-    values (new.id, coalesce(new.raw_user_meta_data ->> 'name', 'Bailey'))
+    values (new.id, coalesce(new.raw_user_meta_data ->> 'name', new.raw_user_meta_data ->> 'full_name', 'Bailey'))
     on conflict (id) do nothing;
   end if;
   return new;

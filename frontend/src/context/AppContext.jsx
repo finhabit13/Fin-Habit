@@ -154,7 +154,7 @@ export function AppProvider({ children }) {
       return;
     }
 
-    if (hasToken()) {
+    if (hasToken() || (await api.resumeSession())) {
       try {
         const data = await api.me();
         setToken(data.token || null);
@@ -209,6 +209,25 @@ export function AppProvider({ children }) {
           }
           return { ok: false, message: t("toast.network") };
         }
+        const key = err.key || null;
+        const msg = key ? t(key) : err.message || t("toast.error");
+        showToast(msg);
+        return { ok: false, message: msg, key };
+      }
+    },
+    [demo, showToast, t]
+  );
+
+  const oauth = useCallback(
+    async (provider = "google") => {
+      if (demo) {
+        showToast(t("toast.demoMode"));
+        return { ok: false };
+      }
+      try {
+        await api.signInWithOAuth(provider);
+        return { ok: true, redirecting: true };
+      } catch (err) {
         const key = err.key || null;
         const msg = key ? t(key) : err.message || t("toast.error");
         showToast(msg);
@@ -306,6 +325,7 @@ export function AppProvider({ children }) {
     run,
     boot,
     auth,
+    oauth,
     verify,
     resetPassword,
     updatePassword,
