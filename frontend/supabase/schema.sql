@@ -291,3 +291,66 @@ $$;
 
 revoke all on function public.admin_profile() from public, anon;
 grant execute on function public.admin_profile() to authenticated;
+
+-- ============================================================
+-- MIGRASI 4 - Profil hanya dibuat setelah email dikonfirmasi (Sep 2026)
+-- JALANKAN DARI BARIS INI.
+-- Prasyarat: nyalakan "Confirm email" di Dashboard > Authentication
+-- > Sign In / Providers > Email. Baris profil (dan data pengguna lain)
+-- baru akan ada setelah user meng-klik tautan verifikasi di email.
+-- ============================================================
+
+-- 1) Saat user baru INSERT (mendaftar): profil TIDAK dibuat
+--    jika email belum dikonfirmasi (email_confirmed_at masih null).
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.email_confirmed_at is not null then
+    insert into public.profiles (id, name)
+    values (new.id, coalesce(new.raw_user_meta_data ->> 'name', 'Bailey'))
+    on conflict (id) do nothing;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+
+-- 2) Saat email dikonfirmasi (klik tautan verifikasi), baru buat profil.
+create or replace function public.handle_user_confirmed()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.email_confirmed_at is not null
+     and old.email_confirmed_at is null then
+    insert into public.profiles (id, name)
+    values (new.id, coalesce(new.raw_user_meta_data ->> 'name', 'Bailey'))
+    on conflict (id) do nothing;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_confirmed on auth.users;
+create trigger on_auth_user_confirmed
+after update on auth.users
+for each row execute function public.handle_user_confirmed();
+
+-- (Opsional, jalan terpisah) Hapus profil akun yang emailnya BELUM
+-- dikonfirmasi (sisa akun buatan saat setting lama masih longgar).
+-- Jalankan hanya jika yakin, karena menghapus data pengguna tsb:
+-- delete from public.profiles p
+-- where not exists (
+--   select 1 from auth.users u
+--   where u.id = p.id and u.email_confirmed_at is not null
+-- );

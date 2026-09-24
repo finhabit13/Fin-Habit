@@ -227,7 +227,7 @@ export const api = {
       const key = authErrorKey(error.message, "register");
       throw new ApiError(status, key, key);
     }
-    if (data?.session) {
+    if (data?.session && data?.user?.email_confirmed_at) {
       const user = assertNotBanned(await loadProfile(data.user.id));
       setToken(data.session.access_token);
       return { token: data.session.access_token, user };
