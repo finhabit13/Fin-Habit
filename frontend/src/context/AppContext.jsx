@@ -239,6 +239,7 @@ export function AppProvider({ children }) {
       try {
         const target = demo ? store : api;
         await target.updatePassword({ password });
+        clearToken();
         setRecovering(false);
         setUser(null);
         showToast(t("toast.passwordUpdated"));
