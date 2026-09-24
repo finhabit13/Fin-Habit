@@ -513,7 +513,7 @@ export const api = {
     await sessionUser();
     const { data, error } = await c
       .from("profiles")
-      .select("id, name, points, streak, challenges_done, badges, role")
+      .select("id, name, points, streak, challenges_done, badges, role, banned")
       .order("points", { ascending: false });
     if (error) throw new ApiError(500, error.message);
     return (data || []).map((r) => ({
@@ -523,7 +523,8 @@ export const api = {
       streak: Number(r.streak),
       challengesDone: Number(r.challenges_done),
       badges: r.badges || [],
-      role: r.role || "user"
+      role: r.role || "user",
+      banned: !!r.banned
     }));
   },
 
