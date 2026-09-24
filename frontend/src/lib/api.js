@@ -288,12 +288,18 @@ export const api = {
   verifyMagicLink: async (params) => {
     const c = needClient();
     const { data, error } = await c.auth.verifyOtp({
-      token: params.token,
+      token_hash: params.tokenHash || undefined,
+      token: params.token || undefined,
       type: params.type || "email"
     });
     if (error) {
       const key = authErrorKey(error.message, "register");
       throw new ApiError(401, key, key);
+    }
+    if (params.type === "recovery") {
+      const token = data.session?.access_token;
+      if (token) setToken(token);
+      return { token: token || null, user: null };
     }
     const user = assertNotBanned(await loadProfile(data.user.id));
     const token = data.session?.access_token;

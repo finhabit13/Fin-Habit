@@ -68,15 +68,22 @@ export function AppProvider({ children }) {
     setPage("home");
   }, []);
 
-  const verifyMagicLink = useCallback(async () => {
+  const verifyMagicLink = useCallback(async (opts = {}) => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    const type = params.get("type");
-    if (!token || !type) return { ok: false };
+    const token = opts.token ?? params.get("token");
+    const tokenHash = opts.tokenHash ?? params.get("token_hash");
+    const type = opts.type ?? params.get("type");
+    if ((!token && !tokenHash) || !type) return { ok: false };
 
     try {
       const target = demo ? store : api;
-      const data = await target.verifyMagicLink({ token, type });
+      const data = await target.verifyMagicLink({ token, tokenHash, type });
+      if (type === "recovery") {
+        if (!demo) setToken(data.token);
+        setRecovering(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return { ok: true };
+      }
       if (!demo) setToken(data.token);
       setUser(data.user);
       if (data.user.role === "admin") {
@@ -138,8 +145,11 @@ export function AppProvider({ children }) {
    */
   const boot = useCallback(async () => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("token") && params.get("type")) {
-      await verifyMagicLink();
+    const token = params.get("token");
+    const tokenHash = params.get("token_hash");
+    const type = params.get("type");
+    if ((token || tokenHash) && type) {
+      await verifyMagicLink({ token, tokenHash, type });
       return;
     }
 
