@@ -1710,6 +1710,29 @@ select:focus-visible {
   opacity: 0.92;
 }
 
+.auth-switch {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 14px 0;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--blue);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--navy);
+}
+
 .lang-switch {
   position: absolute;
   top: 16px;

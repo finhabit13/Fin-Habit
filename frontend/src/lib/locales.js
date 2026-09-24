@@ -43,6 +43,8 @@ const UI_ID = {
   "auth.btnLogin": "Masuk",
   "auth.btnRegister": "Buat akun",
   "auth.btnDemo": "Coba mode demo tanpa akun",
+  "auth.noAccount": "Belum punya akun?",
+  "auth.haveAccount": "Sudah punya akun?",
   "auth.language": "Bahasa",
 
   "auth.oVerTitle": "Kode verifikasi",
@@ -367,6 +369,8 @@ const UI_EN = {
   "auth.btnLogin": "Log in",
   "auth.btnRegister": "Create account",
   "auth.btnDemo": "Try demo mode without an account",
+  "auth.noAccount": "No account yet?",
+  "auth.haveAccount": "Already have an account?",
   "auth.language": "Language",
 
   "auth.oVerTitle": "Verification code",

@@ -75,9 +75,11 @@ export default function Profile() {
             ))}
           </div>
         </div>
-        <button className="btn btn-outline" onClick={reset}>
-          {t("pf.resetBtn")}
-        </button>
+        {demo && (
+          <button className="btn btn-outline" onClick={reset}>
+            {t("pf.resetBtn")}
+          </button>
+        )}
         <button className="btn btn-light" onClick={logout}>
           {t("pf.logout")}
         </button>
