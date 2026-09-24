@@ -137,14 +137,6 @@ export default function Home() {
           </span>
           {t("home.quickLeaderboard")}
         </button>
-        {user.role === "admin" && (
-          <button className="quick" onClick={() => go("admin")}>
-            <span className="q-ico">
-              <Glyph name="shieldCheck" size={20} />
-            </span>
-            {t("home.quickAdmin")}
-          </button>
-        )}
       </div>
 
       <div className="stat-row">

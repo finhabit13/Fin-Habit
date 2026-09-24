@@ -83,7 +83,6 @@ export default function Phone() {
         <p className="nav-group-label">{t("nav.groupTools")}</p>
         <ul className="side-nav">
           {TOOLS.map(renderLink)}
-          {user && user.role === "admin" && renderLink({ id: "admin", icon: "shieldCheck" })}
         </ul>
 
         <div className="side-foot">

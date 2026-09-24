@@ -8,7 +8,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESEND_SECONDS = 60;
 
 export default function Auth() {
-  const { auth, verify, enterDemo } = useApp();
+  const { auth, enterDemo } = useApp();
   const { t, lang, setLang } = useI18n();
 
   const [mode, setMode] = useState("login");
@@ -18,12 +18,10 @@ export default function Auth() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const [vfEmail, setVfEmail] = useState("");
-  const [digits, setDigits] = useState(Array(6).fill(""));
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [resending, setResending] = useState(false);
-
-  const boxes = useRef([]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -34,6 +32,7 @@ export default function Auth() {
   const switchMode = (m) => {
     setMode(m);
     setError("");
+    setMagicLinkSent(false);
   };
 
   const submit = async (e) => {
@@ -59,52 +58,19 @@ export default function Auth() {
     setError("");
     const res = await auth(mode, { name, email: emailClean, password });
     if (res.needVerification) {
-      setVfEmail(emailClean);
+      setMagicLinkSent(true);
+      setSentEmail(emailClean);
       setCooldown(RESEND_SECONDS);
-      setDigits(Array(6).fill(""));
     } else if (!res.ok && res.message) {
       setError(res.message);
     }
     setBusy(false);
   };
 
-  const code = digits.join("");
-
-  const handleDigit = (i, value) => {
-    const clean = value.replace(/\D/g, "").slice(-1);
-    if (!clean) return;
-    const next = digits.slice();
-    next[i] = clean;
-    setDigits(next);
-    if (i < 5) boxes.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i, e) => {
-    if (e.key === "Backspace" && !digits[i] && i > 0) boxes.current[i - 1]?.focus();
-  };
-
-  const handlePaste = (e) => {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (text) {
-      e.preventDefault();
-      setDigits(Array(6).fill("").map((_, i) => text[i] || ""));
-      boxes.current[Math.min(text.length, 5)]?.focus();
-    }
-  };
-
-  const submitCode = async () => {
-    if (code.length < 6) return;
-    setBusy(true);
-    setError("");
-    const res = await verify({ email: vfEmail, code, password });
-    if (!res.ok && res.message) setError(res.message);
-    setBusy(false);
-  };
-
   const resend = async () => {
     if (cooldown > 0 || resending) return;
     setResending(true);
-    const res = await auth("register", { name, email: vfEmail, password });
+    const res = await auth("register", { name, email: sentEmail, password });
     if (res.needVerification) {
       setCooldown(RESEND_SECONDS);
     } else if (!res.ok && res.message) {
@@ -114,9 +80,9 @@ export default function Auth() {
   };
 
   const backToForm = () => {
-    setVfEmail("");
+    setMagicLinkSent(false);
+    setSentEmail("");
     setMode("register");
-    setDigits(Array(6).fill(""));
     setError("");
   };
 
@@ -139,40 +105,26 @@ export default function Auth() {
         <p className="auth-tagline">{t("auth.tagline")}</p>
         <p className="auth-sub">{t("auth.subtitle")}</p>
 
-        {vfEmail ? (
-          <div className="verify-box">
-            <p className="verify-title">{t("auth.oVerTitle")}</p>
-            <p className="verify-note">
-              {t("auth.oVerSub", { email: vfEmail })}
-            </p>
-            <div className="verify-grid" onPaste={handlePaste}>
-              {digits.map((d, i) => (
-                <input
-                  key={i}
-                  ref={(el) => (boxes.current[i] = el)}
-                  className="verify-digit"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={1}
-                  value={d}
-                  onChange={(e) => handleDigit(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  aria-label={t("auth.oVerDigit", { n: i + 1 })}
-                />
-              ))}
+        {magicLinkSent ? (
+          <div className="verify-box magic-link-sent">
+            <div className="magic-link-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
             </div>
+            <p className="verify-title">{t("auth.magicLinkTitle")}</p>
+            <p className="verify-note magic-link-note">
+              {t("auth.magicLinkSub", { email: sentEmail })}
+            </p>
+            <p className="muted small magic-link-hint">
+              {t("auth.magicLinkHint")}
+            </p>
             {error && (
               <p className="auth-error" role="alert">
                 {error}
               </p>
             )}
-            <button
-              className="btn btn-primary"
-              disabled={busy || code.length < 6}
-              onClick={submitCode}
-            >
-              {t("auth.oVerVerify")}
-            </button>
             <div className="verify-foot">
               <button className="btn btn-ghost slim" onClick={resend} disabled={cooldown > 0 || resending}>
                 {cooldown > 0 ? t("auth.oVerCooldown", { s: cooldown }) : t("auth.oVerResend")}

@@ -67,6 +67,37 @@ export function AppProvider({ children }) {
     setPage("home");
   }, []);
 
+  const verifyMagicLink = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const type = params.get("type");
+    if (!token || !type) return { ok: false };
+
+    try {
+      const target = demo ? store : api;
+      const data = await target.verifyMagicLink({ token, type });
+      if (!demo) setToken(data.token);
+      setUser(data.user);
+      if (data.user.role === "admin") {
+        window.location.href = "/admin";
+        return { ok: true };
+      }
+      setPage("home");
+      showToast(t("toast.verified"));
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return { ok: true };
+    } catch (err) {
+      if (err instanceof NetworkError) {
+        enterDemo();
+      } else if (err instanceof ApiError) {
+        showToast(err.key ? t(err.key) : err.message);
+      } else {
+        showToast(err.message || t("toast.error"));
+      }
+      return { ok: false };
+    }
+  }, [demo, showToast, t, enterDemo]);
+
   /** Jalan kan aksi pada service aktif; tangani error & ambil user terbaru. */
   const run = useCallback(
     async (fn, { silent = false } = {}) => {
@@ -97,11 +128,21 @@ export function AppProvider({ children }) {
    * backend/demo tersambung tanpa halaman login.
    */
   const boot = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("token") && params.get("type")) {
+      await verifyMagicLink();
+      return;
+    }
+
     if (hasToken()) {
       try {
         const data = await api.me();
         setToken(data.token || null);
         setUser(data);
+        if (data.role === "admin") {
+          window.location.href = "/admin";
+          return;
+        }
         setResolved(true);
         return;
       } catch (err) {
@@ -111,7 +152,7 @@ export function AppProvider({ children }) {
       }
     }
     setResolved(true);
-  }, [enterDemo]);
+  }, [enterDemo, verifyMagicLink]);
 
   const auth = useCallback(
     async (kind, body) => {
@@ -123,6 +164,10 @@ export function AppProvider({ children }) {
         }
         if (!demo) setToken(data.token);
         setUser(data.user);
+        if (data.user.role === "admin") {
+          window.location.href = "/admin";
+          return { ok: true };
+        }
         setPage("home");
         showToast(demo ? t("toast.demoMode") : t("toast.hello", { name: data.user.name }));
         return { ok: true };
@@ -160,6 +205,10 @@ export function AppProvider({ children }) {
         const data = await api.verify(body);
         if (data.token) setToken(data.token);
         setUser(data.user);
+        if (data.user.role === "admin") {
+          window.location.href = "/admin";
+          return { ok: true };
+        }
         setPage("home");
         showToast(t("toast.verified"));
         return { ok: true };

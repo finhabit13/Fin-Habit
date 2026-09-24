@@ -235,6 +235,22 @@ export const api = {
     return { token: token || null, user };
   },
 
+  verifyMagicLink: async (params) => {
+    const c = needClient();
+    const { data, error } = await c.auth.verifyOtp({
+      token: params.token,
+      type: params.type || "email"
+    });
+    if (error) {
+      const key = authErrorKey(error.message, "register");
+      throw new ApiError(401, key, key);
+    }
+    const user = await loadProfile(data.user.id);
+    const token = data.session?.access_token;
+    if (token) setToken(token);
+    return { token: token || null, user };
+  },
+
   login: async ({ email, password }) => {
     const c = needClient();
     const { data, error } = await c.auth.signInWithPassword({ email, password });

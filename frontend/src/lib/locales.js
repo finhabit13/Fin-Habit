@@ -54,6 +54,11 @@ const UI_ID = {
   "auth.oVerError": "Kode salah atau sudah kedaluwarsa. Coba lagi.",
   "auth.oVerBack": "Ubah email",
   "auth.oVerDigit": "Kotak kode ke-{n}",
+
+  "auth.magicLinkTitle": "Cek emailmu",
+  "auth.magicLinkSub": "Kami telah mengirim tautan verifikasi ke {email}. Klik tautan tersebut untuk menyelesaikan pendaftaran.",
+  "auth.magicLinkHint": "Tautan ini hanya berlaku sekali. Jika tidak diterima, cek folder spam atau kirim ulang.",
+
   "auth.mascotAlt": "Maskot FINHABIT",
 
   "toast.verified": "Akun berhasil diverifikasi!",
@@ -329,6 +334,11 @@ const UI_EN = {
   "auth.oVerError": "Code is wrong or expired. Try again.",
   "auth.oVerBack": "Change email",
   "auth.oVerDigit": "Code box {n}",
+
+  "auth.magicLinkTitle": "Check your email",
+  "auth.magicLinkSub": "We've sent a verification link to {email}. Click the link to finish signing up.",
+  "auth.magicLinkHint": "This link works once. If you don't see it, check spam or resend.",
+
   "auth.mascotAlt": "FINHABIT mascot",
 
   "err.emailTaken": "Email is already registered",

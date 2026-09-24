@@ -120,6 +120,11 @@ export const store = {
     return { token: "demo", user: userView() };
   },
 
+  async verifyMagicLink() {
+    await delay();
+    return { token: "demo", user: userView() };
+  },
+
   async me() {
     await delay();
     return userView();
