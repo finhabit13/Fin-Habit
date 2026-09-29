@@ -6,7 +6,7 @@
 
 import { CASES, CHALLENGES, DEFAULT_DATA, MISSIONS } from "./data";
 import { monthKey, todayKey, uid } from "./util";
-import { applyReward, dimOf, shootForDay, unlockBadges } from "./rewards";
+import { answerQuiz, applyReward, dimOf, shootForDay, unlockBadges } from "./rewards";
 
 const KEY = "finhabit_demo_v1";
 
@@ -27,6 +27,7 @@ function seed() {
   d.challengeCategories = [];
   d.caseIndex = 0;
   d.lastActiveDay = null;
+  d.quizState = {};
   d.role = "user";
   return d;
 }
@@ -251,12 +252,17 @@ export const store = {
     return { user: userView() };
   },
 
-  async chooseCase(index, optionIndex) {
+  async chooseCase(index, optionIndex, { hard = false } = {}) {
     await delay();
-    const caseData = CASES[index % CASES.length];
-    const opt = caseData.options[optionIndex % caseData.options.length];
-    grant(opt.pts, opt.dim, opt.d);
-    return { user: userView() };
+    const r = answerQuiz(db.user, todayKey(), index, optionIndex, hard);
+    persist();
+    return { user: userView(), meta: {
+      correct: r.correct,
+      gained: r.gained,
+      lost: r.lost,
+      already: r.already,
+      capped: r.capped
+    } };
   },
 
   async completeMission(id) {
@@ -310,6 +316,27 @@ export const store = {
   },
 
   async adminProfile() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async banners() {
+    await delay();
+    return [];
+  },
+
+  async adminBanners() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminAddBanner() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminSetBanner() {
+    throw new Error("Akses admin ditolak");
+  },
+
+  async adminDeleteBanner() {
     throw new Error("Akses admin ditolak");
   }
 };

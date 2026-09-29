@@ -354,3 +354,134 @@ for each row execute function public.handle_user_confirmed();
 --   select 1 from auth.users u
 --   where u.id = p.id and u.email_confirmed_at is not null
 -- );
+
+-- ============================================================
+-- MIGRASI 5 - Quiz Decision Lab + Banner Promosi (Sep 2026)
+-- JALANKAN DARI BARIS INI.
+-- 1) quiz_state menyimpan sesi kuis harian (tanggal, jumlah soal,
+--    poin terkumpul, soal yang sudah dijawab) di baris profile.
+-- 2) Tabel banners untuk carousel promosi di home.
+-- ============================================================
+
+alter table public.profiles
+  add column if not exists quiz_state jsonb not null default '{}';
+
+create table public.banners (
+  id uuid primary key default gen_random_uuid(),
+  image_data text not null,
+  caption text not null default '',
+  link text not null default '',
+  position integer not null default 0,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+alter table public.banners enable row level security;
+
+-- Semua user login bisa membaca banner aktif (untuk home).
+create policy "banners select authed" on public.banners
+  for select using (auth.role() = 'authenticated');
+
+-- Admin mengelola banner lewat fungsi di bawah (bisa read semua).
+
+create or replace function public.get_banners()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v jsonb;
+begin
+  select coalesce(jsonb_agg(row_to_json(b) order by b.position), '[]'::jsonb)
+  from (
+    select id, image_data, caption, link, position
+    from public.banners
+    where active = true
+  ) b into v;
+  return v;
+end;
+$$;
+
+revoke all on function public.get_banners() from public, anon;
+grant execute on function public.get_banners() to authenticated;
+
+create or replace function public.admin_banners_all()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v jsonb;
+begin
+  if not public.is_admin() then
+    return null;
+  end if;
+  select coalesce(jsonb_agg(row_to_json(b) order by b.position), '[]'::jsonb)
+  from (
+    select id, image_data, caption, link, position, active, created_at
+    from public.banners
+  ) b into v;
+  return v;
+end;
+$$;
+
+revoke all on function public.admin_banners_all() from public, anon;
+grant execute on function public.admin_banners_all() to authenticated;
+
+create or replace function public.admin_add_banner(p_image text, p_caption text, p_link text, p_position integer)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin.';
+  end if;
+  insert into public.banners (image_data, caption, link, position)
+  values (p_image, coalesce(p_caption, ''), coalesce(p_link, ''), coalesce(p_position, 0));
+end;
+$$;
+
+revoke all on function public.admin_add_banner(text, text, text, integer) from public, anon;
+grant execute on function public.admin_add_banner(text, text, text, integer) to authenticated;
+
+create or replace function public.admin_set_banner(p_id uuid, p_active boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin.';
+  end if;
+  update public.banners
+  set active = coalesce(p_active, true)
+  where id = p_id;
+end;
+$$;
+
+revoke all on function public.admin_set_banner(uuid, boolean) from public, anon;
+grant execute on function public.admin_set_banner(uuid, boolean) to authenticated;
+
+create or replace function public.admin_delete_banner(p_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin.';
+  end if;
+  delete from public.banners where id = p_id;
+end;
+$$;
+
+revoke all on function public.admin_delete_banner(uuid) from public, anon;
+grant execute on function public.admin_delete_banner(uuid) to authenticated;

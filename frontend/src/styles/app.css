@@ -1038,6 +1038,281 @@ select:focus-visible {
   line-height: 1.6;
 }
 
+/* ---- Quiz Decision Lab (Duolingo style) ---- */
+
+.quiz-top {
+  margin-bottom: 14px;
+}
+
+.quiz-progress {
+  height: 10px;
+  background: var(--blue-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.quiz-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--green-deep));
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.quiz-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.case-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--navy);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.switch-label input {
+  accent-color: var(--blue);
+  width: 16px;
+  height: 16px;
+}
+
+.option-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.option-label {
+  flex: 1;
+}
+
+.option-check {
+  color: var(--green-deep);
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.option-cross {
+  color: var(--red, #e53935);
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.option.is-correct {
+  border-color: var(--green-deep);
+  background: #e6f4ea;
+}
+
+.option.is-wrong {
+  border-color: var(--red, #e53935);
+  background: #fdecea;
+}
+
+.option.is-reveal {
+  border-color: var(--green-deep);
+  background: var(--green-soft, #f0faf0);
+}
+
+.option.is-dim {
+  opacity: 0.55;
+}
+
+.option:disabled {
+  cursor: default;
+}
+
+.result-card.is-right {
+  border-left: 5px solid var(--green-deep);
+}
+
+.result-card.is-wrong {
+  border-left: 5px solid var(--red, #e53935);
+}
+
+.warn-tag {
+  background: #fff3cd;
+  color: #7a5a04;
+}
+
+.done-card {
+  text-align: center;
+}
+
+.done-card .card-title {
+  margin-top: 14px;
+}
+
+/* ---- Banner carousel ---- */
+
+.banner-carousel {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: var(--blue-soft);
+}
+
+.banner-slide {
+  display: flex;
+  overflow: hidden;
+  scroll-snap-type: x mandatory;
+}
+
+.banner-slide-inner {
+  display: flex;
+  transition: transform 0.45s ease;
+}
+
+.banner-item {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.banner-item img {
+  width: 100%;
+  aspect-ratio: 750 / 280;
+  object-fit: cover;
+  display: block;
+}
+
+.banner-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 18px 14px 12px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.banner-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 2px;
+}
+
+.banner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  background: var(--blue-line);
+  cursor: pointer;
+  padding: 0;
+}
+
+.banner-dot.is-active {
+  background: var(--blue);
+}
+
+.banner-empty {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---- Admin banner form ---- */
+
+.banner-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.banner-preview {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--blue-line);
+}
+
+.field-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-inline input {
+  max-width: 90px;
+}
+
+.admin-file-input {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.small-muted {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.banner-editor input[type="text"],
+.banner-editor input[type="number"] {
+  width: 100%;
+  max-width: 420px;
+}
+
+.banner-list {
+  margin-top: 12px;
+}
+
+.banner-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--blue-line);
+}
+
+.banner-thumb {
+  width: 90px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.banner-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-row-info p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.banner-row-actions {
+  display: flex;
+  gap: 6px;
+}
+
 /* ================= What If / Saving ================= */
 
 .field {

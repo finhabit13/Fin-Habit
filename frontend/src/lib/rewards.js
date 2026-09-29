@@ -1,8 +1,57 @@
 // Logika poin, dimensi, dan lencana. Sumber tunggal untuk backend (rewards.py)
 // dan mode demo (store.js) agar hasilnya selalu konsisten.
 
-import { TOPIC_DIM } from "./data";
+import { CASES, TOPIC_DIM } from "./data";
 import { overallScore } from "./util";
+
+export const QUIZ_CONFIG = {
+  bonusCount: 3, // beberapa kuis pertama per hari memberi poin penuh
+  fullPts: 10, // jawaban benar di awal hari
+  latePts: 5, // jawaban benar setelah jatah bonus habis
+  wrongPts: 3, // potongan poin saat jawaban salah
+  hardPts: 15, // jawaban benar di mode hard
+  hardWrongPts: 6, // potongan poin salah di mode hard
+  maxDay: 40 // batas maksimum poin kuis per hari
+};
+
+export function qzState(user, today) {
+  const st = user.quizState || {};
+  if (st.date === today) return st;
+  return { date: today, count: 0, earned: 0, done: [] };
+}
+
+export function answerQuiz(user, today, index, optionIndex, hard = false) {
+  const caseData = CASES[index % CASES.length];
+  const st = qzState(user, today);
+  const already = st.done.includes(index);
+  const correct = optionIndex % caseData.options.length === caseData.correct;
+  let gained = 0;
+  let lost = 0;
+
+  if (!already) {
+    st.done.push(index);
+    if (correct) {
+      const inBonus = !hard && st.count < QUIZ_CONFIG.bonusCount;
+      let pts = hard ? QUIZ_CONFIG.hardPts : inBonus ? QUIZ_CONFIG.fullPts : QUIZ_CONFIG.latePts;
+      pts = Math.min(pts, Math.max(0, QUIZ_CONFIG.maxDay - st.earned));
+      if (pts > 0) {
+        st.earned += pts;
+        st.count += 1;
+        const opt = caseData.options[optionIndex];
+        if (opt.dim && opt.d) user.dims[opt.dim] = Math.min(100, (user.dims[opt.dim] || 0) + opt.d);
+      }
+      gained = pts;
+    } else {
+      lost = hard ? QUIZ_CONFIG.hardWrongPts : QUIZ_CONFIG.wrongPts;
+    }
+  }
+
+  user.points = Math.max(0, user.points + gained - lost);
+  user.quizState = st;
+  unlockBadges(user);
+  user.weekly[user.weekly.length - 1] = overallScore(user.dims);
+  return { user, correct, gained, lost, already, capped: st.earned >= QUIZ_CONFIG.maxDay };
+}
 
 export function unlockBadges(user, opts = {}) {
   const owned = new Set(user.badges);

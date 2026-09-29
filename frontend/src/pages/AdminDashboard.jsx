@@ -17,20 +17,24 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [detailId, setDetailId] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [banners, setBanners] = useState([]);
+  const [bannerForm, setBannerForm] = useState({ image: "", caption: "", link: "", position: 0 });
 
   useEffect(() => {
     const load = async () => {
       await run(async (s) => {
-        const [st, us, ex, bd] = await Promise.allSettled([
+        const [st, us, ex, bd, bn] = await Promise.allSettled([
           s.adminStats(),
           s.adminUsers(),
           s.adminExpenses(),
-          s.adminLeaderboard()
+          s.adminLeaderboard(),
+          s.adminBanners()
         ]);
         if (st.status === "fulfilled") setStats(st.value);
         if (us.status === "fulfilled") setUsers(us.value || []);
         if (ex.status === "fulfilled") setExpenses(ex.value || []);
         if (bd.status === "fulfilled") setBoard(bd.value || []);
+        if (bn.status === "fulfilled") setBanners(bn.value || []);
         setLoading(false);
         return null;
       });
@@ -54,6 +58,76 @@ export default function AdminDashboard() {
 
   const openDetail = (id) => setDetailId(id);
   const closeDetail = () => setDetailId(null);
+
+  const onBannerFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 750;
+        canvas.height = 280;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+        const sw = img.width * scale;
+        const sh = img.height * scale;
+        ctx.drawImage(img, (canvas.width - sw) / 2, (canvas.height - sh) / 2, sw, sh);
+        setBannerForm((f) => ({ ...f, image: canvas.toDataURL("image/jpeg", 0.85) }));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addBanner = async () => {
+    if (!bannerForm.image) {
+      showToast(t("ad.bannerNoImage"));
+      return;
+    }
+    const res = await run((s) =>
+      s.adminAddBanner({
+        image: bannerForm.image,
+        caption: bannerForm.caption,
+        link: bannerForm.link,
+        position: bannerForm.position
+      })
+    );
+    if (res.ok) {
+      showToast(t("ad.bannerAdded"));
+      setBannerForm({ image: "", caption: "", link: "", position: banners.length });
+      await reloadBanners();
+    }
+  };
+
+  const toggleBanner = async (b) => {
+    const res = await run((s) => s.adminSetBanner({ id: b.id, active: !b.active }));
+    if (res.ok) {
+      showToast(t("ad.bannerUpdated"));
+      await reloadBanners();
+    }
+  };
+
+  const deleteBanner = async (b) => {
+    if (!confirm(t("ad.bannerDelete") + "?")) return;
+    const res = await run((s) => s.adminDeleteBanner({ id: b.id }));
+    if (res.ok) {
+      showToast(t("ad.bannerDeleted"));
+      await reloadBanners();
+    }
+  };
+
+  const reloadBanners = async () => {
+    await run(async (s) => {
+      try {
+        const list = await s.adminBanners();
+        setBanners(list || []);
+      } catch {
+        setBanners([]);
+      }
+      return null;
+    });
+  };
 
   if (!user || user.role !== "admin") {
     return (
@@ -248,6 +322,88 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        </section>
+
+        <section className="admin-section">
+          <div className="row-between">
+            <h2 className="section-title">{t("ad.banners")}</h2>
+            <span className="small muted">{banners.length}</span>
+          </div>
+          <p className="muted small">{t("ad.bannerSub")}</p>
+
+          <div className="card banner-editor">
+            <div className="banner-row-info small-muted">{t("ad.bannerResize")}</div>
+
+            {bannerForm.image && <img className="banner-preview" src={bannerForm.image} alt="" />}
+
+            <div className="banner-form">
+              <label className="field">
+                <span>{t("ad.bannerImage")}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => onBannerFile(e.target.files?.[0])}
+                  className="admin-file-input"
+                />
+              </label>
+              <label className="field">
+                <span>{t("ad.bannerCaption")}</span>
+                <input
+                  type="text"
+                  value={bannerForm.caption}
+                  onChange={(e) => setBannerForm((f) => ({ ...f, caption: e.target.value }))}
+                />
+              </label>
+              <label className="field">
+                <span>{t("ad.bannerLink")}</span>
+                <input
+                  type="text"
+                  value={bannerForm.link}
+                  placeholder="https://..."
+                  onChange={(e) => setBannerForm((f) => ({ ...f, link: e.target.value }))}
+                />
+              </label>
+              <label className="field field-inline">
+                <span>{t("ad.bannerPosition")}</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={bannerForm.position}
+                  onChange={(e) => setBannerForm((f) => ({ ...f, position: Number(e.target.value) || 0 }))}
+                />
+              </label>
+              <button className="btn btn-primary" onClick={addBanner} disabled={!bannerForm.image}>
+                {t("ad.bannerAdd")}
+              </button>
+            </div>
+          </div>
+
+          {banners.length > 0 && (
+            <div className="card banner-list">
+              {banners.map((b) => (
+                <div key={b.id} className="banner-row">
+                  <img className="banner-thumb" src={b.image} alt="" />
+                  <div className="banner-row-info">
+                    <p>
+                      {b.caption || <span className="muted">—</span>}{" "}
+                      <span className="muted small">({b.position})</span>
+                    </p>
+                    <span className={"tag" + (b.active ? " admin" : "")}>
+                      {b.active ? t("ad.bannerActive") : t("ad.bannerInactive")}
+                    </span>
+                  </div>
+                  <div className="banner-row-actions">
+                    <button className="btn btn-outline small-btn" onClick={() => toggleBanner(b)}>
+                      {b.active ? t("ad.bannerInactive") : t("ad.bannerActive")}
+                    </button>
+                    <button className="btn btn-outline small-btn danger" onClick={() => deleteBanner(b)}>
+                      {t("ad.bannerDelete")}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

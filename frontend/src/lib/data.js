@@ -18,7 +18,8 @@ export const DEFAULT_DATA = {
   savingGoal: 300000,
   savingCurrent: 125000,
   monthlyBudget: 500000,
-  lastActiveDay: null
+  lastActiveDay: null,
+  quizState: {}
 };
 
 export const TOPICS = [
@@ -177,6 +178,8 @@ export const CHALLENGES = [
 export const CASES = [
   {
     text: "Kamu memiliki Rp50.000. Temanmu mengajak membeli minuman seharga Rp25.000, tetapi kamu sedang menabung untuk membeli barang seharga Rp300.000.",
+    correct: 2,
+    hard: false,
     options: [
       {
         label: "Ikut membeli karena semua teman membeli.",
@@ -218,6 +221,8 @@ export const CASES = [
   },
   {
     text: "Kamu menerima uang kaget Rp200.000 dari saudaramu. Ponselmu masih berfungsi, tetapi model terbaru sedang diskon dan teman-temanmu sudah memilikinya.",
+    correct: 2,
+    hard: false,
     options: [
       {
         label: "Langsung membeli aksesori ponsel baru.",
@@ -259,6 +264,8 @@ export const CASES = [
   },
   {
     text: "Sebuah akun menawarkan 'modal Rp100.000 jadi Rp500.000 dalam 3 hari, dijamin pasti untung'. Banyak komentar mengaku berhasil.",
+    correct: 2,
+    hard: true,
     options: [
       {
         label: "Ikut karena banyak yang mengaku berhasil.",
@@ -295,6 +302,135 @@ export const CASES = [
         pts: 30,
         dim: "risk",
         d: 4
+      }
+    ]
+  },
+  {
+    text: "Kamu menyisihkan Rp300.000 untuk beli sepatu sepak bola. Temanmu menawari kelas komedi ekstra yang membuatmu senang, seharga Rp175.000.",
+    correct: 2,
+    hard: false,
+    options: [
+      {
+        label: "Belanja sepatu sekalian, jangan sampai kehabisan.",
+        consequence: "Sepatu didapat, tapi target habis dan uang kas tidak ada cadangan.",
+        impact: "Target −Rp300.000 · Tanpa dana darurat",
+        lesson: "Membeli karena takut kehabisan adalah keputusan yang didorong rasa takut, bukan alasan.",
+        pts: 5,
+        dim: "decision",
+        d: 0
+      },
+      {
+        label: "Masuk kelas komedi, sepatu ditunda.",
+        consequence: "Kesenangan sesaat, tapi target kebutuhan jadi mundur cukup jauh.",
+        impact: "Target mundur · Dana Rp175.000 berkurang",
+        lesson: "Hiburan sah-sah saja, tapi jangan sampai menggeser kebutuhan yang sudah direncanakan.",
+        pts: 15,
+        dim: "goal",
+        d: 2
+      },
+      {
+        label: "Tetap di target, tapi sisihkan Rp25.000 untuk hiburan.",
+        consequence: "Sepatu tetap tercapai dan kamu tetap punya jatah senang-senang.",
+        impact: "Target +Rp300.000 · Hiburan Rp25.000",
+        lesson: "Memberi ruang kecil untuk hiburan menjaga konsistensi, tanpa mengorbankan kebutuhan.",
+        pts: 25,
+        dim: "goal",
+        d: 3
+      },
+      {
+        label: "Pinjam uang ke kakak untuk ikut kelas komedi.",
+        consequence: "Utang bertambah dan tanggung jawab membayar ke kakak.",
+        impact: "Utang baru · Risiko berulang",
+        lesson: "Meminjam untuk hiburan menciptakan siklus yang bisa membuatmu terus tergantung.",
+        pts: 5,
+        dim: "risk",
+        d: 0
+      }
+    ]
+  },
+  {
+    text: "Iklan pemain game menawarkan item langka murah 'untuk penggemar', diskon Rp80.000. Kamu tidak benar-benar butuh item itu.",
+    correct: 1,
+    hard: true,
+    options: [
+      {
+        label: "Segera beli sebelum harganya naik.",
+        consequence: "Uang keluar untuk barang yang tidak kamu butuhkan.",
+        impact: "Saldo −Rp80.000 · Impulsif",
+        lesson: "Takut 'kehilangan diskon' membuatmu membeli di luar rencana.",
+        pts: 5,
+        dim: "spending",
+        d: 0
+      },
+      {
+        label: "Lewati, karena memang tidak butuh.",
+        consequence: "Uang tetap aman dan kamu tidak terbujuk citra eksklusif.",
+        impact: "Saldo aman · Kontrol diri",
+        lesson: "Pertanyaan terbaik sebelum membeli: apakah aku butuh, atau hanya ingin karena dipasarkan?",
+        pts: 25,
+        dim: "goal",
+        d: 3
+      },
+      {
+        label: "Beli tapi pakai uang casual top-up.",
+        consequence: "Kamu mengorbankan jatah game lain bulan ini.",
+        impact: "Jatah game −Rp80.000 · Budget top-up habis",
+        lesson: "Menukar satu jatah dengan jatah lain tetap mengurangi kemampuanmu nanti.",
+        pts: 15,
+        dim: "spending",
+        d: 2
+      },
+      {
+        label: "Minta bonus top-up dari teman.",
+        consequence: "Memanfaatkan teman untuk keputusan yang sebenarnya milikmu sendiri.",
+        impact: "Social risk · Tidak mandiri",
+        lesson: "Keputusan finansial sebaiknya dari budget pribadi, bukan meminta teman membayar.",
+        pts: 10,
+        dim: "decision",
+        d: 1
+      }
+    ]
+  },
+  {
+    text: "Teman dekat meminjam uang Rp150.000, bilang akan mengembalikan 'besok'. Kamu sudah punya rencana menabung mingguan.",
+    correct: 1,
+    hard: true,
+    options: [
+      {
+        label: "Pinjamkan penuh, karena takut dibilang pelit.",
+        consequence: "Uangmu hilang dari rencana dan kamu khawatir tidak kembali.",
+        impact: "Saldo −Rp150.000 · Rencana terganggu",
+        lesson: "Meminjamkan karena takut penilaian orang menghilangkan kendalimu sendiri.",
+        pts: 5,
+        dim: "decision",
+        d: 0
+      },
+      {
+        label: "Pinjamkan sebagian yang memang tidak mengganggu rencana.",
+        consequence: "Kamu membantu namun rencana tabungan tidak terguncang.",
+        impact: "Sisa target aman · Hubungan tetap",
+        lesson: "Menolong tetap bisa dilakukan tanpa mengorbankan seluruh rencana.",
+        pts: 25,
+        dim: "goal",
+        d: 3
+      },
+      {
+        label: "Pinjamkan dan abaikan rencana mingguan.",
+        consequence: "Target menabung jadi molor, minggu depan kamu menyesal.",
+        impact: "Rencana mundur · Penyesalan berulang",
+        lesson: "Menolong sekali jangan menggoyahkan kebiasaan yang sudah kamu bangun.",
+        pts: 10,
+        dim: "saving",
+        d: 1
+      },
+      {
+        label: "Bilang tidak punya, padahal punya.",
+        consequence: "Menghindari konflik tapi membuatmu berbohong.",
+        impact: "Kepercayaan memburuk · Dilema",
+        lesson: "Berkomunikasi jujur tentang batasmu lebih sehat daripada berpura-pura.",
+        pts: 15,
+        dim: "decision",
+        d: 2
       }
     ]
   }

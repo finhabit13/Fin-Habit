@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import BannerCarousel from "../components/BannerCarousel";
 import ScoreRing from "../components/ScoreRing";
 import { useApp } from "../context/AppContext";
 import Glyph from "../lib/glyphs";
@@ -10,10 +11,16 @@ export default function Home() {
   const { user, go, run } = useApp();
   const { t, content } = useI18n();
   const [budget, setBudget] = useState(null);
+  const [banners, setBanners] = useState([]);
 
   useEffect(() => {
     run(async (s) => {
       setBudget(await s.budget());
+      try {
+        setBanners(await s.banners());
+      } catch {
+        setBanners([]);
+      }
       return null;
     });
   }, []);
@@ -33,6 +40,8 @@ export default function Home() {
         {t("home.greet." + greeting())}, {user.name}!
       </p>
       <h1 className="greet-big">{t("home.headline")}</h1>
+
+      {banners.length > 0 && <BannerCarousel banners={banners} />}
 
       {warn && (
         <button className={"card limit-card " + budget.status} onClick={() => go("budget")}>

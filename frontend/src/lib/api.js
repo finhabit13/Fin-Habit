@@ -2,8 +2,8 @@
 // bisa memakai keduanya secara bergantian (demo vs live).
 
 import { createClient } from "@supabase/supabase-js";
-import { CASES, CHALLENGES, MISSIONS } from "./data";
-import { applyReward, dimOf, shootForDay, unlockBadges } from "./rewards";
+import { CHALLENGES, MISSIONS } from "./data";
+import { answerQuiz, applyReward, dimOf, shootForDay, unlockBadges } from "./rewards";
 import { monthKey, todayKey } from "./util";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
@@ -88,6 +88,7 @@ function toUser(row) {
     savingCurrent: Number(row.saving_current),
     monthlyBudget: Number(row.monthly_budget),
     lastActiveDay: row.last_active_day,
+    quizState: row.quiz_state || {},
     role: row.role || "user",
     banned: !!row.banned
   };
@@ -115,6 +116,7 @@ function toRow(user) {
     saving_current: user.savingCurrent,
     monthly_budget: user.monthlyBudget,
     last_active_day: user.lastActiveDay,
+    quiz_state: user.quizState || {},
     role: user.role || "user",
     banned: !!user.banned
   };
@@ -196,6 +198,7 @@ function freshUser(name) {
     savingCurrent: 0,
     monthlyBudget: 500000,
     lastActiveDay: null,
+    quizState: {},
     role: "user",
     banned: false
   };
@@ -528,13 +531,21 @@ export const api = {
     return { user };
   },
 
-  chooseCase: async (index, optionIndex) => {
+  chooseCase: async (index, optionIndex, { hard = false } = {}) => {
     const c = needClient();
     const au = await sessionUser();
-    const caseData = CASES[index % CASES.length];
-    const opt = caseData.options[optionIndex % caseData.options.length];
-    const user = await mutateUser(au.id, (u) => applyReward(u, opt.pts, opt.dim, opt.d));
-    return { user };
+    let meta = null;
+    const user = await mutateUser(au.id, (u) => {
+      const r = answerQuiz(u, todayKey(), index, optionIndex, hard);
+      meta = {
+        correct: r.correct,
+        gained: r.gained,
+        lost: r.lost,
+        already: r.already,
+        capped: r.capped
+      };
+    });
+    return { user, meta };
   },
 
   completeMission: async (id) => {
@@ -679,5 +690,65 @@ export const api = {
         count: Number(x.n)
       }))
     };
+  },
+
+  banners: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c.rpc("get_banners");
+    if (error) throw new ApiError(500, error.message);
+    return (data || []).map((b) => ({
+      id: b.id,
+      image: b.image_data,
+      caption: b.caption,
+      link: b.link,
+      position: Number(b.position)
+    }));
+  },
+
+  adminBanners: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c.rpc("admin_banners_all");
+    if (error) throw new ApiError(500, error.message);
+    if (!data) throw new ApiError(403, "Akses admin ditolak");
+    return (data || []).map((b) => ({
+      id: b.id,
+      image: b.image_data,
+      caption: b.caption,
+      link: b.link,
+      position: Number(b.position),
+      active: !!b.active,
+      createdAt: b.created_at
+    }));
+  },
+
+  adminAddBanner: async ({ image, caption, link, position }) => {
+    const c = needClient();
+    await sessionUser();
+    const { error } = await c.rpc("admin_add_banner", {
+      p_image: image,
+      p_caption: caption || "",
+      p_link: link || "",
+      p_position: Number(position) || 0
+    });
+    if (error) throw new ApiError(500, error.message);
+    return { ok: true };
+  },
+
+  adminSetBanner: async ({ id, active }) => {
+    const c = needClient();
+    await sessionUser();
+    const { error } = await c.rpc("admin_set_banner", { p_id: id, p_active: !!active });
+    if (error) throw new ApiError(500, error.message);
+    return { ok: true };
+  },
+
+  adminDeleteBanner: async ({ id }) => {
+    const c = needClient();
+    await sessionUser();
+    const { error } = await c.rpc("admin_delete_banner", { p_id: id });
+    if (error) throw new ApiError(500, error.message);
+    return { ok: true };
   }
 };

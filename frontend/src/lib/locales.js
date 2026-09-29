@@ -234,12 +234,24 @@ const UI_ID = {
   "sv.err": "Masukkan nominal lebih dari 0",
 
   "de.title": "Decision Lab",
-  "de.sub": "Tidak ada jawaban \"benar\" tunggal. Lihat dampaknya.",
+  "de.sub": "Kuis keputusan: jawaban benar menambah poin, salah menguranginya.",
   "de.caseOf": "Kasus {n} dari {total}",
   "de.ptsGain": "+{n} poin",
   "de.noPts": "Tidak ada poin untuk pilihan ini",
   "de.resultTitle": "Kamu memilih {choice}",
-  "de.next": "Kasus berikutnya",
+  "de.next": "Lanjut",
+  "de.hardMode": "Mode Sulit",
+  "de.bonusLeft": "Bonus tersisa: {n}",
+  "de.dailyPts": "{earned} / {max} poin hari ini",
+  "de.leftCount": "{n} kuis tersisa",
+  "de.alreadyAnswered": "Kuis ini sudah dijawab hari ini",
+  "de.correctToast": "Benar! +{n} poin",
+  "de.wrongToast": "Kurang tepat. −{n} poin",
+  "de.resultCorrect": "Benar! +{pts} poin",
+  "de.resultWrong": "Kurang tepat. −{pts} poin",
+  "de.capReached": "Batas poin harian tercapai",
+  "de.allDoneTitle": "Semua kuis hari ini selesai!",
+  "de.allDoneSub": "Kembali lagi besok untuk kuis dan poin baru.",
 
   "fa.title": "Family Mission",
   "fa.sub": "Misi yang dikerjakan bersama keluarga di rumah.",
@@ -326,6 +338,21 @@ const UI_ID = {
   "ad.lastActive": "Aktif terakhir",
   "ad.savingProgress": "Tabungan",
   "ad.budgetInfo": "Anggaran bulanan",
+  "ad.banners": "Banner Home",
+  "ad.bannerSub": "Gambar promosi yang tampil sebagai carousel di halaman Home.",
+  "ad.bannerAdd": "Tambah banner",
+  "ad.bannerImage": "Gambar",
+  "ad.bannerResize": "Disarankan 750×280. Gambar diubah otomatis ke ukuran itu.",
+  "ad.bannerCaption": "Teks (opsional)",
+  "ad.bannerLink": "Tautan tujuan (opsional)",
+  "ad.bannerPosition": "Urutan",
+  "ad.bannerActive": "Aktif",
+  "ad.bannerInactive": "Nonaktif",
+  "ad.bannerDelete": "Hapus",
+  "ad.bannerAdded": "Banner ditambahkan",
+  "ad.bannerUpdated": "Banner diperbarui",
+  "ad.bannerDeleted": "Banner dihapus",
+  "ad.bannerNoImage": "Pilih gambar dulu",
   "err.banned": "Akun kamu dinonaktifkan oleh admin.",
 };
 
@@ -561,12 +588,24 @@ const UI_EN = {
   "sv.err": "Enter an amount above 0",
 
   "de.title": "Decision Lab",
-  "de.sub": "There is no single \"right\" answer. See the impact.",
+  "de.sub": "Decision quiz: a correct answer adds points, a wrong one subtracts.",
   "de.caseOf": "Case {n} of {total}",
   "de.ptsGain": "+{n} points",
   "de.noPts": "No points for this choice",
   "de.resultTitle": "You chose {choice}",
-  "de.next": "Next case",
+  "de.next": "Next",
+  "de.hardMode": "Hard Mode",
+  "de.bonusLeft": "Bonus left: {n}",
+  "de.dailyPts": "{earned} / {max} points today",
+  "de.leftCount": "{n} quizzes left",
+  "de.alreadyAnswered": "Already answered today",
+  "de.correctToast": "Correct! +{n} points",
+  "de.wrongToast": "Not quite. −{n} points",
+  "de.resultCorrect": "Correct! +{pts} points",
+  "de.resultWrong": "Not quite. −{pts} points",
+  "de.capReached": "Daily point limit reached",
+  "de.allDoneTitle": "All quizzes done for today!",
+  "de.allDoneSub": "Come back tomorrow for new quizzes and points.",
 
   "fa.title": "Family Mission",
   "fa.sub": "Missions you do with your family at home.",
@@ -653,6 +692,21 @@ const UI_EN = {
   "ad.lastActive": "Last active",
   "ad.savingProgress": "Savings",
   "ad.budgetInfo": "Monthly budget",
+  "ad.banners": "Home Banners",
+  "ad.bannerSub": "Promo images shown as a carousel on the Home page.",
+  "ad.bannerAdd": "Add banner",
+  "ad.bannerImage": "Image",
+  "ad.bannerResize": "Recommended 750×280. Images are resized automatically.",
+  "ad.bannerCaption": "Caption (optional)",
+  "ad.bannerLink": "Target link (optional)",
+  "ad.bannerPosition": "Order",
+  "ad.bannerActive": "Active",
+  "ad.bannerInactive": "Inactive",
+  "ad.bannerDelete": "Delete",
+  "ad.bannerAdded": "Banner added",
+  "ad.bannerUpdated": "Banner updated",
+  "ad.bannerDeleted": "Banner deleted",
+  "ad.bannerNoImage": "Pick an image first",
   "err.banned": "Your account has been suspended by an admin.",
 };
 
@@ -841,6 +895,8 @@ const CHALLENGES_EN = [
 const CASES_ID = [
   {
     text: "Kamu memiliki Rp50.000. Temanmu mengajak membeli minuman seharga Rp25.000, tetapi kamu sedang menabung untuk membeli barang seharga Rp300.000.",
+    correct: 2,
+    hard: false,
     options: [
       { label: "Ikut membeli karena semua teman membeli.", consequence: "Uangmu tersisa Rp25.000 dan tabungan tidak bertambah hari ini.", impact: "Saldo −Rp25.000 · Target mundur ± 5 hari", lesson: "Tekanan teman adalah pengeluaran yang paling sering tidak disadari. Ikut sesekali tidak masalah, tapi kalau menjadi kebiasaan mingguan, biayanya Rp100.000 per bulan.", pts: 5, dim: "decision", d: 0 },
       { label: "Tidak membeli.", consequence: "Rp25.000 bisa langsung masuk tabungan dan targetmu lebih cepat 5 hari.", impact: "Tabungan +Rp25.000 · Target maju ± 5 hari", lesson: "Pilihan paling hemat, tapi perhatikan sisi sosialnya. Kamu tetap bisa ikut berkumpul tanpa harus membeli.", pts: 20, dim: "saving", d: 3 },
@@ -850,6 +906,8 @@ const CASES_ID = [
   },
   {
     text: "Kamu menerima uang kaget Rp200.000 dari saudaramu. Ponselmu masih berfungsi, tetapi model terbaru sedang diskon dan teman-temanmu sudah memilikinya.",
+    correct: 2,
+    hard: false,
     options: [
       { label: "Langsung membeli aksesori ponsel baru.", consequence: "Uang habis dalam satu hari dan tidak ada yang tersisa untuk kebutuhan mendadak.", impact: "Saldo −Rp200.000 · Dana darurat kosong", lesson: "Uang tak terduga paling mudah menguap karena terasa 'bukan uang sendiri'. Perlakukan sama seperti uang hasil menabung.", pts: 5, dim: "decision", d: 0 },
       { label: "Menabung seluruhnya untuk target yang sudah ada.", consequence: "Targetmu melompat jauh dan hampir tercapai.", impact: "Tabungan +Rp200.000 · Target 67% tercapai", lesson: "Sangat kuat secara finansial. Pastikan target itu memang masih kamu inginkan agar motivasimu tidak padam.", pts: 25, dim: "saving", d: 3 },
@@ -859,11 +917,46 @@ const CASES_ID = [
   },
   {
     text: "Sebuah akun menawarkan 'modal Rp100.000 jadi Rp500.000 dalam 3 hari, dijamin pasti untung'. Banyak komentar mengaku berhasil.",
+    correct: 2,
+    hard: true,
     options: [
       { label: "Ikut karena banyak yang mengaku berhasil.", consequence: "Uangmu kemungkinan besar hilang dan akun tersebut tidak bisa dihubungi lagi.", impact: "Saldo −Rp100.000 · Risiko penipuan", lesson: "Komentar bisa dibeli atau dibuat oleh akun palsu. Bukti sosial bukan bukti keamanan.", pts: 0, dim: "risk", d: 0 },
       { label: "Mencoba dengan uang kecil dulu.", consequence: "Kamu mungkin menerima 'untung' kecil pertama, lalu diajak menyetor lebih besar.", impact: "Saldo −Rp20.000 · Umpan awal", lesson: "Keuntungan pertama yang kecil adalah taktik klasik untuk membangun kepercayaan sebelum kerugian besar.", pts: 5, dim: "risk", d: 1 },
       { label: "Menolak dan mencari tahu dulu legalitasnya.", consequence: "Uangmu aman dan kamu belajar memeriksa izin resmi sebelum menaruh uang.", impact: "Saldo aman · Kemampuan verifikasi naik", lesson: "Keuntungan tinggi yang 'dijamin pasti' bertentangan dengan prinsip dasar investasi: makin tinggi imbal hasil, makin tinggi risikonya.", pts: 30, dim: "risk", d: 4 },
       { label: "Melaporkan akun tersebut dan memberi tahu teman.", consequence: "Kamu melindungi diri sendiri sekaligus orang lain di sekitarmu.", impact: "Saldo aman · Dampak positif ke sekitar", lesson: "Literasi keuangan menjadi jauh lebih kuat ketika dibagikan, bukan disimpan sendiri.", pts: 30, dim: "risk", d: 4 }
+    ]
+  },
+  {
+    text: "Kamu menyisihkan Rp300.000 untuk beli sepatu sepak bola. Temanmu menawari kelas komedi ekstra yang membuatmu senang, seharga Rp175.000.",
+    correct: 2,
+    hard: false,
+    options: [
+      { label: "Belanja sepatu sekalian, jangan sampai kehabisan.", consequence: "Sepatu didapat, tapi target habis dan uang kas tidak ada cadangan.", impact: "Target −Rp300.000 · Tanpa dana darurat", lesson: "Membeli karena takut kehabisan adalah keputusan yang didorong rasa takut, bukan alasan.", pts: 5, dim: "decision", d: 0 },
+      { label: "Masuk kelas komedi, sepatu ditunda.", consequence: "Kesenangan sesaat, tapi target kebutuhan jadi mundur cukup jauh.", impact: "Target mundur · Dana Rp175.000 berkurang", lesson: "Hiburan sah-sah saja, tapi jangan sampai menggeser kebutuhan yang sudah direncanakan.", pts: 15, dim: "goal", d: 2 },
+      { label: "Tetap di target, tapi sisihkan Rp25.000 untuk hiburan.", consequence: "Sepatu tetap tercapai dan kamu tetap punya jatah senang-senang.", impact: "Target +Rp300.000 · Hiburan Rp25.000", lesson: "Memberi ruang kecil untuk hiburan menjaga konsistensi, tanpa mengorbankan kebutuhan.", pts: 25, dim: "goal", d: 3 },
+      { label: "Pinjam uang ke kakak untuk ikut kelas komedi.", consequence: "Utang bertambah dan tanggung jawab membayar ke kakak.", impact: "Utang baru · Risiko berulang", lesson: "Meminjam untuk hiburan menciptakan siklus yang bisa membuatmu terus tergantung.", pts: 5, dim: "risk", d: 0 }
+    ]
+  },
+  {
+    text: "Iklan pemain game menawarkan item langka murah 'untuk penggemar', diskon Rp80.000. Kamu tidak benar-benar butuh item itu.",
+    correct: 1,
+    hard: true,
+    options: [
+      { label: "Segera beli sebelum harganya naik.", consequence: "Uang keluar untuk barang yang tidak kamu butuhkan.", impact: "Saldo −Rp80.000 · Impulsif", lesson: "Takut 'kehilangan diskon' membuatmu membeli di luar rencana.", pts: 5, dim: "spending", d: 0 },
+      { label: "Lewati, karena memang tidak butuh.", consequence: "Uang tetap aman dan kamu tidak terbujuk citra eksklusif.", impact: "Saldo aman · Kontrol diri", lesson: "Pertanyaan terbaik sebelum membeli: apakah aku butuh, atau hanya ingin karena dipasarkan?", pts: 25, dim: "goal", d: 3 },
+      { label: "Beli tapi pakai uang casual top-up.", consequence: "Kamu mengorbankan jatah game lain bulan ini.", impact: "Jatah game −Rp80.000 · Budget top-up habis", lesson: "Menukar satu jatah dengan jatah lain tetap mengurangi kemampuanmu nanti.", pts: 15, dim: "spending", d: 2 },
+      { label: "Minta bonus top-up dari teman.", consequence: "Memanfaatkan teman untuk keputusan yang sebenarnya milikmu sendiri.", impact: "Social risk · Tidak mandiri", lesson: "Keputusan finansial sebaiknya dari budget pribadi, bukan meminta teman membayar.", pts: 10, dim: "decision", d: 1 }
+    ]
+  },
+  {
+    text: "Teman dekat meminjam uang Rp150.000, bilang akan mengembalikan 'besok'. Kamu sudah punya rencana menabung mingguan.",
+    correct: 1,
+    hard: true,
+    options: [
+      { label: "Pinjamkan penuh, karena takut dibilang pelit.", consequence: "Uangmu hilang dari rencana dan kamu khawatir tidak kembali.", impact: "Saldo −Rp150.000 · Rencana terganggu", lesson: "Meminjamkan karena takut penilaian orang menghilangkan kendalimu sendiri.", pts: 5, dim: "decision", d: 0 },
+      { label: "Pinjamkan sebagian yang memang tidak mengganggu rencana.", consequence: "Kamu membantu namun rencana tabungan tidak terguncang.", impact: "Sisa target aman · Hubungan tetap", lesson: "Menolong tetap bisa dilakukan tanpa mengorbankan seluruh rencana.", pts: 25, dim: "goal", d: 3 },
+      { label: "Pinjamkan dan abaikan rencana mingguan.", consequence: "Target menabung jadi molor, minggu depan kamu menyesal.", impact: "Rencana mundur · Penyesalan berulang", lesson: "Menolong sekali jangan menggoyahkan kebiasaan yang sudah kamu bangun.", pts: 10, dim: "saving", d: 1 },
+      { label: "Bilang tidak punya, padahal punya.", consequence: "Menghindari konflik tapi membuatmu berbohong.", impact: "Kepercayaan memburuk · Dilema", lesson: "Berkomunikasi jujur tentang batasmu lebih sehat daripada berpura-pura.", pts: 15, dim: "decision", d: 2 }
     ]
   }
 ];
@@ -871,6 +964,8 @@ const CASES_ID = [
 const CASES_EN = [
   {
     text: "You have Rp50.000. A friend asks you to buy a Rp25.000 drink together, but you are saving up for something that costs Rp300.000.",
+    correct: 2,
+    hard: false,
     options: [
       { label: "Buy along because everyone else is.", consequence: "You are left with Rp25.000 and your savings do not grow today.", impact: "Balance −Rp25.000 · Goal delayed ± 5 days", lesson: "Peer pressure is the most unnoticed expense. Joining once is fine, but as a weekly habit it costs Rp100.000 a month.", pts: 5, dim: "decision", d: 0 },
       { label: "Do not buy.", consequence: "Rp25.000 can go straight into savings and your goal gets 5 days closer.", impact: "Savings +Rp25.000 · Goal 5 days sooner", lesson: "The most frugal choice, but mind the social side. You can still hang out without buying.", pts: 20, dim: "saving", d: 3 },
@@ -880,6 +975,8 @@ const CASES_EN = [
   },
   {
     text: "A relative gives you Rp200.000 as a surprise gift. Your phone works fine, but the newest model is on sale and all your friends have it.",
+    correct: 2,
+    hard: false,
     options: [
       { label: "Buy new phone accessories right away.", consequence: "The money is gone in one day and nothing is left for emergencies.", impact: "Balance −Rp200.000 · No emergency fund", lesson: "Unexpected money evaporates fastest because it feels like 'free money'. Treat it like money you saved.", pts: 5, dim: "decision", d: 0 },
       { label: "Save it all for your existing goal.", consequence: "Your goal jumps far ahead and is almost reached.", impact: "Savings +Rp200.000 · Goal 67% reached", lesson: "Very strong financially. Make sure the goal is still what you want so your motivation stays.", pts: 25, dim: "saving", d: 3 },
@@ -889,11 +986,46 @@ const CASES_EN = [
   },
   {
     text: "An account offers 'turn Rp100.000 into Rp500.000 in 3 days, guaranteed profit'. Many comments claim it worked.",
+    correct: 2,
+    hard: true,
     options: [
       { label: "Join because many say it worked.", consequence: "Your money is likely gone and the account cannot be reached anymore.", impact: "Balance −Rp100.000 · Scam risk", lesson: "Comments can be bought or posted by fake accounts. Social proof is not proof of safety.", pts: 0, dim: "risk", d: 0 },
       { label: "Try with a small amount first.", consequence: "You may receive a small first 'profit', then be invited to deposit more.", impact: "Balance −Rp20.000 · Bait", lesson: "A small first profit is a classic tactic to build trust before a big loss.", pts: 5, dim: "risk", d: 1 },
       { label: "Refuse and check its legitimacy first.", consequence: "Your money is safe and you learn to check official licenses before investing.", impact: "Balance safe · Better verification skills", lesson: "High guaranteed returns contradict basic investing: the higher the return, the higher the risk.", pts: 30, dim: "risk", d: 4 },
       { label: "Report the account and warn friends.", consequence: "You protect yourself and the people around you.", impact: "Balance safe · Positive impact around you", lesson: "Financial literacy becomes far stronger when shared, not kept to yourself.", pts: 30, dim: "risk", d: 4 }
+    ]
+  },
+  {
+    text: "You set aside Rp300.000 for a football shoe. A friend offers a fun comedy class for Rp175.000.",
+    correct: 2,
+    hard: false,
+    options: [
+      { label: "Also buy the shoe, before it runs out.", consequence: "Shoe in hand, but the goal is gone and there is no cash reserve.", impact: "Goal −Rp300.000 · No emergency fund", lesson: "Buying out of fear of missing out is driven by fear, not reason.", pts: 5, dim: "decision", d: 0 },
+      { label: "Join the comedy class, delay the shoes.", consequence: "Short-term fun, but a planned need slips far back.", impact: "Goal delayed · Rp175.000 spent", lesson: "Fun is fine, but not when it pushes aside a need you already planned.", pts: 15, dim: "goal", d: 2 },
+      { label: "Stay on target, set aside Rp25.000 for fun.", consequence: "The shoes are still reached and you keep a little fun budget.", impact: "Goal +Rp300.000 · Fun Rp25.000", lesson: "A small allowance for fun keeps you consistent without hurting needs.", pts: 25, dim: "goal", d: 3 },
+      { label: "Borrow money from an older sibling for the class.", consequence: "Debt grows and you owe your sibling.", impact: "New debt · Habit risk", lesson: "Borrowing for fun creates a cycle that keeps you dependent.", pts: 5, dim: "risk", d: 0 }
+    ]
+  },
+  {
+    text: "A game ad sells a rare cheap item 'for fans', Rp80.000 off. You do not really need it.",
+    correct: 1,
+    hard: true,
+    options: [
+      { label: "Buy it now before the price goes up.", consequence: "Money goes out for something you do not need.", impact: "Balance −Rp80.000 · Impulsive", lesson: "Fear of 'losing a discount' makes you buy off-plan.", pts: 5, dim: "spending", d: 0 },
+      { label: "Skip it, because you do not need it.", consequence: "Money stays safe and you are not lured by exclusivity.", impact: "Balance safe · Self-control", lesson: "Best question before buying: do I need it, or just want it because it is marketed?", pts: 25, dim: "goal", d: 3 },
+      { label: "Buy it using casual top-up money.", consequence: "You sacrifice another game budget this month.", impact: "Game budget −Rp80.000 · Top-up gone", lesson: "Trading one budget for another still reduces your future options.", pts: 15, dim: "spending", d: 2 },
+      { label: "Ask a friend to gift the top-up bonus.", consequence: "You lean on a friend for a decision that is yours.", impact: "Social risk · Not independent", lesson: "Financial decisions should come from your own budget, not a friend paying.", pts: 10, dim: "decision", d: 1 }
+    ]
+  },
+  {
+    text: "A close friend borrows Rp150.000 and says 'I'll pay you back tomorrow'. You already have a weekly saving plan.",
+    correct: 1,
+    hard: true,
+    options: [
+      { label: "Lend it all, afraid of being called stingy.", consequence: "Your money leaves the plan and you worry it won't return.", impact: "Balance −Rp150.000 · Plan disrupted", lesson: "Lending out of fear of judgment takes away your own control.", pts: 5, dim: "decision", d: 0 },
+      { label: "Lend the part that does not break your plan.", consequence: "You help without shaking your saving plan.", impact: "Goal safe · Friendship kept", lesson: "Helping can still happen without sacrificing your whole plan.", pts: 25, dim: "goal", d: 3 },
+      { label: "Lend it and ignore the weekly plan.", consequence: "Saving falls behind and you regret it next week.", impact: "Plan delayed · Regret", lesson: "One act of help should not shake the habit you built.", pts: 10, dim: "saving", d: 1 },
+      { label: "Say you have no money, even though you do.", consequence: "Avoids conflict but makes you lie.", impact: "Trust worsens · Dilemma", lesson: "Honest communication about your limits is healthier than pretending.", pts: 15, dim: "decision", d: 2 }
     ]
   }
 ];
