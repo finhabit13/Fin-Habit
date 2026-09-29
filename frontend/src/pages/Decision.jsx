@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
@@ -19,49 +19,65 @@ export default function Decision() {
   const { user, run, showToast, go } = useApp();
   const { t, content } = useI18n();
   const cases = content.CASES || [];
-  const [hard, setHard] = useState(false);
   const [chosen, setChosen] = useState(null);
   const [lastMeta, setLastMeta] = useState(null);
   const [answered, setAnswered] = useState(null);
   const [qIndex, setQIndex] = useState(null);
+  const [deck, setDeck] = useState(null);
+  const [order, setOrder] = useState(null);
 
   if (!user) return null;
 
   const today = todayKey();
   const qs = user.quizState && user.quizState.date === today ? user.quizState : null;
   const phase = qs?.phase || "intro";
-  const done = qs?.done || [];
   const wrong = qs?.wrong || 0;
   const earned = qs?.earned || 0;
 
-  const pickCase = (avoid = null) => {
+  // Ambil 1 kartu dari dek; saat dek habis, buat dek baru lagi agar urutan terus
+  // berbeda dan soal tidak pernah persis sama dengan sebelumnya. Opsi setiap kasus
+  // diacak agar kasus yang sama tampil dengan susunan pilihan yang berbeda.
+  const drawCard = (srcDeck, avoid = null) => {
     if (!cases.length) return null;
-    let pool = cases.map((c, i) => ({ c, i }));
-    if (hard) pool = pool.filter((x) => x.c.hard);
-    if (!pool.length) pool = cases.map((c, i) => ({ c, i }));
-    if (phase === "paid" && done.length && done.length < cases.length) {
-      const unused = pool.filter((x) => !done.includes(x.i));
-      if (unused.length) pool = unused;
+    let d = srcDeck && srcDeck.length ? [...srcDeck] : shuffle(cases.map((_, i) => i));
+    if (!d.length) d = shuffle(cases.map((_, i) => i));
+    let idx = d[0];
+    if (d.length > 1) {
+      let k = 0;
+      while (idx === avoid && k < d.length) {
+        const j = Math.floor(Math.random() * (d.length - 1)) + 1;
+        [d[0], d[j]] = [d[j], d[0]];
+        idx = d[0];
+        k += 1;
+      }
     }
-    const opts = pool.filter((x) => x.i !== avoid);
-    const src = opts.length ? opts : pool;
-    return src[Math.floor(Math.random() * src.length)].i;
+    const opts = cases[idx]?.options || [];
+    setOrder(shuffle(opts.map((_, i) => i)));
+    setDeck(d.slice(1));
+    return idx;
   };
+
+  useEffect(() => {
+    if ((phase === "paid" || phase === "free") && (qIndex === null || qIndex === undefined)) {
+      setQIndex(drawCard(deck));
+    }
+  }, [phase, qIndex]);
 
   const start = async () => {
     await run((s) => s.startQuiz());
     setChosen(null);
     setLastMeta(null);
     setAnswered(null);
-    setQIndex(pickCase());
+    setQIndex(drawCard(shuffle(cases.map((_, i) => i))));
   };
 
-  const choose = async (optI) => {
+  const choose = async (displayI) => {
     if (chosen !== null || qIndex === null || qIndex === undefined) return;
+    const optI = order[displayI];
     const c = cases[qIndex];
     setAnswered(c);
     setChosen(optI);
-    const res = await run((s) => s.chooseCase(qIndex, optI, { hard }));
+    const res = await run((s) => s.chooseCase(qIndex, optI));
     if (res.ok && res.data.meta) {
       const m = res.data.meta;
       setLastMeta(m);
@@ -76,7 +92,7 @@ export default function Decision() {
     setChosen(null);
     setLastMeta(null);
     setAnswered(null);
-    setQIndex(pickCase(qIndex));
+    setQIndex(drawCard(deck, qIndex));
   };
 
   const continueToFree = async () => {
@@ -84,19 +100,11 @@ export default function Decision() {
     setChosen(null);
     setLastMeta(null);
     setAnswered(null);
-    setQIndex(pickCase());
+    setQIndex(drawCard(deck));
   };
 
   const finish = async () => {
     await run((s) => s.finishQuiz());
-  };
-
-  const toggleHard = (v) => {
-    setHard(v);
-    setChosen(null);
-    setLastMeta(null);
-    setAnswered(null);
-    setQIndex(pickCase(qIndex));
   };
 
   const showResult = chosen !== null && lastMeta && answered;
@@ -105,14 +113,15 @@ export default function Decision() {
   const caseData = shown || {};
   const correctIdx = caseData.correct;
   const isFree = phase === "free";
-  const optClass = (i) => {
+  const optClass = (orig) => {
     if (chosen === null) return "option";
-    if (i === chosen) return i === correctIdx ? "option is-correct" : "option is-wrong";
-    if (i === correctIdx) return "option is-reveal";
+    if (orig === chosen) return orig === correctIdx ? "option is-correct" : "option is-wrong";
+    if (orig === correctIdx) return "option is-reveal";
     return "option is-dim";
   };
   const showWarn = lastMeta?.paidOver && phase === "paid";
   const letters = ["A", "B", "C", "D"];
+  const optOrder = order || (caseData.options ? caseData.options.map((_, i) => i) : []);
 
   if (phase === "done") {
     return (
@@ -169,14 +178,6 @@ export default function Decision() {
           ) : (
             <span className="tag">{t("de.wrongCount", { n: wrong, max: QUIZ_CONFIG.wrongMax })}</span>
           )}
-          <label className="switch-label">
-            <input
-              type="checkbox"
-              checked={hard}
-              onChange={(e) => toggleHard(e.target.checked)}
-            />
-            <span>{t("de.hardMode")}</span>
-          </label>
         </div>
       </div>
 
@@ -203,16 +204,19 @@ export default function Decision() {
         currentCase && (
           <div className="card case-card">
             <p className="case-text">{caseData.text}</p>
-            {caseData.options.map((opt, i) => (
-              <button key={i} className={optClass(i)} disabled={chosen !== null} onClick={() => choose(i)}>
-                <b>{letters[i]}.</b>
-                <span className="option-label-wrap">
-                  <span className="option-label">{opt.label}</span>
-                  {showResult && i === correctIdx && <span className="option-check">✓</span>}
-                  {showResult && i === chosen && i !== correctIdx && <span className="option-cross">✕</span>}
-                </span>
-              </button>
-            ))}
+            {optOrder.map((orig, i) => {
+              const opt = caseData.options[orig];
+              return (
+                <button key={orig} className={optClass(orig)} disabled={chosen !== null} onClick={() => choose(i)}>
+                  <b>{letters[i]}.</b>
+                  <span className="option-label-wrap">
+                    <span className="option-label">{opt.label}</span>
+                    {showResult && orig === correctIdx && <span className="option-check">✓</span>}
+                    {showResult && orig === chosen && orig !== correctIdx && <span className="option-cross">✕</span>}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )
       )}
