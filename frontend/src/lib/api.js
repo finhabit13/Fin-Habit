@@ -3,7 +3,16 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { CHALLENGES, MISSIONS } from "./data";
-import { answerQuiz, applyReward, dimOf, shootForDay, unlockBadges } from "./rewards";
+import {
+  answerQuiz,
+  applyReward,
+  continueFree,
+  dimOf,
+  finishQuiz,
+  shootForDay,
+  startQuiz,
+  unlockBadges
+} from "./rewards";
 import { monthKey, todayKey } from "./util";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
@@ -541,11 +550,37 @@ export const api = {
         correct: r.correct,
         gained: r.gained,
         lost: r.lost,
-        already: r.already,
-        capped: r.capped
+        free: r.free,
+        paidOver: r.paidOver,
+        wrong: r.wrong
       };
     });
     return { user, meta };
+  },
+
+  startQuiz: async () => {
+    const c = needClient();
+    const au = await sessionUser();
+    const user = await mutateUser(au.id, (u) => startQuiz(u, todayKey()));
+    return { user };
+  },
+
+  continueFree: async () => {
+    const c = needClient();
+    const au = await sessionUser();
+    const user = await mutateUser(au.id, (u) => continueFree(u, todayKey()));
+    return { user };
+  },
+
+  finishQuiz: async () => {
+    const c = needClient();
+    const au = await sessionUser();
+    let bonus = 0;
+    const user = await mutateUser(au.id, (u) => {
+      const r = finishQuiz(u, todayKey());
+      bonus = r.bonus;
+    });
+    return { user, bonus };
   },
 
   completeMission: async (id) => {

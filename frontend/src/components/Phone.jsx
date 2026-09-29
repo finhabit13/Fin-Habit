@@ -72,7 +72,7 @@ export default function Phone() {
     <div className="app">
       <nav className="sidebar" aria-label={t("nav.mainMenu")}>
         <div className="brand">
-          <span className="brand-mark">₣</span>
+          <img className="brand-mark brand-mark-img" src="/finhabit-logo.jpeg" alt="" />
           <span className="brand-name">FINHABIT</span>
           <span className="brand-tag">{t("nav.brandTag")}</span>
         </div>
@@ -103,7 +103,7 @@ export default function Phone() {
 
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">₣</span>
+          <img className="brand-mark brand-mark-img" src="/finhabit-logo.jpeg" alt="" />
           <span className="brand-name">FINHABIT</span>
         </div>
         <button className="avatar" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>

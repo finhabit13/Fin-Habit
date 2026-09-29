@@ -34,7 +34,7 @@ function Root() {
   if (!resolved) {
     return (
       <div className="phone boot-screen">
-        <div className="boot-logo">₣</div>
+        <img className="boot-logo" src="/finhabit-logo.jpeg" alt="" />
         <p>FINHABIT</p>
       </div>
     );

@@ -17,7 +17,7 @@ export default function AuthShell({ children }) {
             </button>
           ))}
         </div>
-        <div className="auth-mark">₣</div>
+        <img className="auth-mark auth-mark-img" src="/finhabit-logo.jpeg" alt="FINHABIT" />
         <h1 className="auth-title">FINHABIT</h1>
         <p className="auth-tagline">{t("auth.tagline")}</p>
         <p className="auth-sub">{t("auth.subtitle")}</p>

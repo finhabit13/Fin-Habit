@@ -6,7 +6,7 @@
 
 import { CASES, CHALLENGES, DEFAULT_DATA, MISSIONS } from "./data";
 import { monthKey, todayKey, uid } from "./util";
-import { answerQuiz, applyReward, dimOf, shootForDay, unlockBadges } from "./rewards";
+import { answerQuiz, applyReward, continueFree, dimOf, finishQuiz, shootForDay, startQuiz, unlockBadges } from "./rewards";
 
 const KEY = "finhabit_demo_v1";
 
@@ -260,9 +260,31 @@ export const store = {
       correct: r.correct,
       gained: r.gained,
       lost: r.lost,
-      already: r.already,
-      capped: r.capped
+      free: r.free,
+      paidOver: r.paidOver,
+      wrong: r.wrong
     } };
+  },
+
+  async startQuiz() {
+    await delay();
+    startQuiz(db.user, todayKey());
+    persist();
+    return { user: userView() };
+  },
+
+  async continueFree() {
+    await delay();
+    continueFree(db.user, todayKey());
+    persist();
+    return { user: userView() };
+  },
+
+  async finishQuiz() {
+    await delay();
+    const r = finishQuiz(db.user, todayKey());
+    persist();
+    return { user: userView(), bonus: r.bonus };
   },
 
   async completeMission(id) {

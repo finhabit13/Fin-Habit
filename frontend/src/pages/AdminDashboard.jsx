@@ -178,7 +178,7 @@ export default function AdminDashboard() {
     <div className="admin-dashboard">
       <header className="admin-header">
         <div className="admin-brand">
-          <span className="brand-mark">₣</span>
+          <img className="brand-mark brand-mark-img" src="/finhabit-logo.jpeg" alt="" />
           <div>
             <h1 className="admin-title">FINHABIT Admin</h1>
             <p className="admin-subtitle">{t("ad.subtitle")}</p>

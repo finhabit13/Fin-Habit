@@ -5,44 +5,80 @@ import { CASES, TOPIC_DIM } from "./data";
 import { overallScore } from "./util";
 
 export const QUIZ_CONFIG = {
-  bonusCount: 3, // beberapa kuis pertama per hari memberi poin penuh
+  quizMax: 15, // jumlah maksimum soal per hari (tidak ditampilkan)
+  wrongMax: 5, // batas jawaban salah per hari (ditampilkan)
+  bonusCount: 3, // beberapa soal pertama per hari memberi poin penuh
   fullPts: 10, // jawaban benar di awal hari
   latePts: 5, // jawaban benar setelah jatah bonus habis
   wrongPts: 3, // potongan poin saat jawaban salah
   hardPts: 15, // jawaban benar di mode hard
   hardWrongPts: 6, // potongan poin salah di mode hard
-  maxDay: 40 // batas maksimum poin kuis per hari
+  freeGoodPts: 1, // bonus tersembunyi di fase tanpa poin (benar)
+  freeBadPts: 1 // pengurang tersembunyi di fase tanpa poin (salah)
 };
 
+// Fase kuis: 'intro' (belum mulai) | 'paid' (berpoin) | 'free' (tanpa poin) | 'done'
 export function qzState(user, today) {
   const st = user.quizState || {};
   if (st.date === today) return st;
-  return { date: today, count: 0, earned: 0, done: [] };
+  return { date: today, phase: "intro", paidCount: 0, wrong: 0, count: 0, earned: 0, done: [], freePts: 0 };
+}
+
+export function startQuiz(user, today) {
+  const st = qzState(user, today);
+  st.phase = "paid";
+  user.quizState = st;
+  return { user };
+}
+
+export function continueFree(user, today) {
+  const st = qzState(user, today);
+  st.phase = "free";
+  user.quizState = st;
+  return { user };
+}
+
+// Menabung hasil fase "tanpa poin" ke poin user; menandai kuis selesai hari ini.
+export function finishQuiz(user, today) {
+  const st = qzState(user, today);
+  const bonus = Math.max(0, st.freePts || 0);
+  user.points = Math.max(0, user.points + bonus);
+  st.freePts = 0;
+  st.phase = "done";
+  st.lastBonus = bonus;
+  user.quizState = st;
+  unlockBadges(user);
+  user.weekly[user.weekly.length - 1] = overallScore(user.dims);
+  return { user, bonus };
 }
 
 export function answerQuiz(user, today, index, optionIndex, hard = false) {
   const caseData = CASES[index % CASES.length];
   const st = qzState(user, today);
-  const already = st.done.includes(index);
   const correct = optionIndex % caseData.options.length === caseData.correct;
   let gained = 0;
   let lost = 0;
+  let free = false;
 
-  if (!already) {
+  if (st.phase === "free") {
+    // Fase tanpa poin: akumulasi tersembunyi, baru dibank saat "Selesai Quiz".
+    free = true;
     st.done.push(index);
+    st.freePts = (st.freePts || 0) + (correct ? QUIZ_CONFIG.freeGoodPts : -QUIZ_CONFIG.freeBadPts);
+  } else {
+    st.done.push(index);
+    st.paidCount += 1;
     if (correct) {
       const inBonus = !hard && st.count < QUIZ_CONFIG.bonusCount;
-      let pts = hard ? QUIZ_CONFIG.hardPts : inBonus ? QUIZ_CONFIG.fullPts : QUIZ_CONFIG.latePts;
-      pts = Math.min(pts, Math.max(0, QUIZ_CONFIG.maxDay - st.earned));
-      if (pts > 0) {
-        st.earned += pts;
-        st.count += 1;
-        const opt = caseData.options[optionIndex];
-        if (opt.dim && opt.d) user.dims[opt.dim] = Math.min(100, (user.dims[opt.dim] || 0) + opt.d);
-      }
+      const pts = hard ? QUIZ_CONFIG.hardPts : inBonus ? QUIZ_CONFIG.fullPts : QUIZ_CONFIG.latePts;
+      st.earned += pts;
+      st.count += 1;
+      const opt = caseData.options[optionIndex];
+      if (opt.dim && opt.d) user.dims[opt.dim] = Math.min(100, (user.dims[opt.dim] || 0) + opt.d);
       gained = pts;
     } else {
       lost = hard ? QUIZ_CONFIG.hardWrongPts : QUIZ_CONFIG.wrongPts;
+      st.wrong += 1;
     }
   }
 
@@ -50,7 +86,10 @@ export function answerQuiz(user, today, index, optionIndex, hard = false) {
   user.quizState = st;
   unlockBadges(user);
   user.weekly[user.weekly.length - 1] = overallScore(user.dims);
-  return { user, correct, gained, lost, already, capped: st.earned >= QUIZ_CONFIG.maxDay };
+
+  const paidOver = st.phase !== "free" && (st.paidCount >= QUIZ_CONFIG.quizMax || st.wrong >= QUIZ_CONFIG.wrongMax);
+  const overLimit = paidOver || st.phase === "free";
+  return { user, correct, gained, lost, free, paidOver, overLimit, wrong: st.wrong };
 }
 
 export function unlockBadges(user, opts = {}) {
