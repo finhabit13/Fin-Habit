@@ -46,7 +46,7 @@ export default function Leaderboard() {
             <div
               key={r.id}
               className={"leader-row leader-row-full rise" + (isMe ? " is-me" : "")}
-              style={{ "--d": `${Math.min(i, 10) * 40}ms` }}
+              style={{ "--d": `${Math.min(i, 10) * 70}ms` }}
             >
               <span className={"leader-rank " + (MEDALS[i] || "")}>
                 {MEDALS[i] ? <Glyph name="medal" size={16} /> : i + 1}

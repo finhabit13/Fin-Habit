@@ -45,7 +45,7 @@ export default function Home() {
       {banners.length > 0 && <BannerCarousel banners={banners} />}
 
       {warn && (
-        <button className={"card card-press limit-card rise " + budget.status} style={{ "--d": "40ms" }} onClick={() => go("budget")}>
+        <button className={"card card-press limit-card rise " + budget.status} style={{ "--d": "90ms" }} onClick={() => go("budget")}>
           <div className="limit-head">
             <span className="limit-ico">
               <Glyph name="warn" size={18} />
@@ -103,7 +103,7 @@ export default function Home() {
             <li
               key={c.id}
               className={"rise " + ((user.challengeDate || {})[c.id] === todayKey() ? "is-done" : "")}
-              style={{ "--d": `${i * 50}ms` }}
+              style={{ "--d": `${i * 85}ms` }}
             >
               <span className="home-today-title">{c.title}</span>
               <span className="muted small">
@@ -168,11 +168,11 @@ export default function Home() {
           <span className="stat-num">{user.streak}</span>
           <span className="stat-lab">{t("home.statStreak")}</span>
         </div>
-        <div className="stat rise" style={{ "--d": "60ms" }}>
+        <div className="stat rise" style={{ "--d": "110ms" }}>
           <span className="stat-num">{user.points}</span>
           <span className="stat-lab">{t("home.statPoints")}</span>
         </div>
-        <div className="stat rise" style={{ "--d": "120ms" }}>
+        <div className="stat rise" style={{ "--d": "220ms" }}>
           <span className="stat-num">{user.challengesDone || 0}</span>
           <span className="stat-lab">{t("home.statChallenge")}</span>
         </div>

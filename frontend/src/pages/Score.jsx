@@ -50,7 +50,12 @@ export default function Score() {
               key={i}
               className={"chart-col" + (i === user.weekly.length - 1 ? " today" : "")}
             >
-              <div className="chart-bar" style={{ height: Math.max(8, Math.min(100, v)) + "%" }} />
+              <Meter
+                value={v}
+                delay={i * 90}
+                minVisible={8}
+                vertical
+              />
               <span className="chart-lab">{content.DAY_LABELS[i]}</span>
             </div>
           ))}

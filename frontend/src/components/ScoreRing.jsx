@@ -12,7 +12,7 @@ const TOTAL = 2 * Math.PI * R;
 export default function ScoreRing({ value, big = false }) {
   const { t } = useI18n();
   const pct = Math.max(0, Math.min(100, value || 0));
-  const sweep = useSweep(900);
+  const sweep = useSweep(1150);
   const shown = Math.round(pct * sweep);
   const offset = TOTAL - (TOTAL * shown) / 100;
 

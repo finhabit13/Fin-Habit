@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 
 import useRevealReady from "./useRevealReady";
 
-/** Ease-out: cepat di awal, melambat halus di akhir. Untuk progress ini yang
- *  terasa nyaman; ease-in yang lambat di awal justru terbaca macet. */
-export const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+/** Kurva pertumbuhan. Pangkat 1, bukan 3: dengan 1-(1-t)^3 sudah 49% jarak
+ *  tercapai di 20% waktu pertama, jadi yang terlihat cuma lompatan awal lalu
+ *  diam. Pangkat 1,6 memberi sekitar 30% di 20% dan 92% di 80%, jadi
+ *  pertumbuhannya terbaca dan baru menapak di nilai akhir. */
+export const easeGrow = (t) => 1 - Math.pow(1 - t, 1.6);
 
 function reducedMotion() {
   return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -19,7 +21,7 @@ function reducedMotion() {
  * Setelah itu rAF yang meng-interpolate, sehingga garis dan labelnya bisa
  * jalan dari satu clock yang sama.
  */
-export default function useSweep(duration = 900, delay = 0) {
+export default function useSweep(duration = 1100, delay = 0) {
   const [progress, setProgress] = useState(0);
   const ready = useRevealReady();
 
@@ -39,7 +41,7 @@ export default function useSweep(duration = 900, delay = 0) {
         return;
       }
       const q = Math.min(1, t);
-      setProgress(easeOut(q));
+      setProgress(easeGrow(q));
       if (q < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);

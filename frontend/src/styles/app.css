@@ -30,12 +30,19 @@
   --shadow-lg: 0 18px 44px rgba(14, 42, 71, 0.16);
 
   /* Gerak: satu set token supaya durasi dan easing konsisten di seluruh app.
-     -out untuk masuk (melambatMulut di akhir), -in-out untuk gerak bolak-balik. */
+     --ease-out sengaja_forward supaya refleks UI (tekan tombol, ganti warna)
+     terasa responsif. Untuk gerak yang memindahkan konten jangan pakai itu:
+     cubic-bezier(0.22, 1, ...) sudah 67% jarak di 20% waktu pertama, jadi
+     geraknya terbaca sebagai lompat although durasinya panjang. --ease-move
+     lebih seimbang dan dipakai untuk masuk halaman dan kartu. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-1: 140ms;
   --dur-2: 240ms;
   --dur-3: 420ms;
+  --dur-page: 520ms;
+  --dur-rise: 560ms;
 }
 
 *,
@@ -423,7 +430,7 @@ img.avatar {
   border-radius: 99px;
   background: var(--blue);
   width: 0;
-  transition: width 0.8s cubic-bezier(0.3, 1, 0.4, 1);
+  transition: width var(--dur-rise) var(--ease-move);
 }
 
 .bar-fill.green {
@@ -1919,7 +1926,7 @@ select:focus-visible {
   width: 100%;
   border-radius: 8px 8px 4px 4px;
   background: var(--blue);
-  transition: height 0.8s cubic-bezier(0.3, 1, 0.4, 1);
+  transition: height var(--dur-rise) var(--ease-move);
 }
 
 .chart-col.today .chart-bar {
@@ -3546,27 +3553,29 @@ select:focus-visible {
    prefers-reduced-motion di bawah file ini.
    ====================================================== */
 
-/* Halaman masuk: naik sedikit lalu selesai. Dipicu lewat key pada wrapper
-   halaman, jadi tiap navigasi mengulang animasi dari nol. */
+/* Halaman masuk: fade saja. Dulu wrapper ini ikut naik 8px, padahal isi
+   halaman juga naik sendiri lewat .rise, jadi tiap elemen bergerak dua kali
+   sekaligus dan geraknya saling menimpa. Sekarang hanya .rise yang menggeser,
+   sehingga urutannya terbaca sebagai satu kaskade. */
 .page-enter {
-  animation: page-in var(--dur-3) var(--ease-out) both;
+  animation: page-in var(--dur-page) var(--ease-move) both;
 }
 
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 /* Kartu dan baris yang masuk bertahap. --d diisi dari indeks supaya tidak
-   butuh banyak keyframe terpisah. */
+   butuh banyak keyframe terpisah. Jarak antar-item sengaja longgar: dengan
+   jarak 40ms semua kartu hampir selesai bersamaan dan cascade-nya hilang,
+   sehingga yang terlihat cuma satu blok yang bergerak cepat. */
 .rise {
-  animation: rise-in var(--dur-3) var(--ease-out) both;
+  animation: rise-in var(--dur-rise) var(--ease-move) both;
   animation-delay: var(--d, 0ms);
 }
 

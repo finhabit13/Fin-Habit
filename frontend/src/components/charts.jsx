@@ -11,7 +11,7 @@ const nf = (n) => Number(n || 0).toLocaleString("id-ID");
 
 /** Donut untuk sebaran kategori. Dipakai untuk score_bands. */
 export function DonutChart({ data, size = 168, thickness = 26, centerLabel, centerValue }) {
-  const sweep = useSweep(1000, 120);
+  const sweep = useSweep(1200, 140);
   const total = data.reduce((s, d) => s + (Number(d.value) || 0), 0);
 
   if (!total) {
@@ -76,7 +76,7 @@ export function DonutChart({ data, size = 168, thickness = 26, centerLabel, cent
 
 /** Garis tren untuk 14 hari terakhir. */
 export function LineChart({ data, height = 190, labelKey = "d", valueKey = "total", format = nf }) {
-  const sweep = useSweep(1100, 100);
+  const sweep = useSweep(1300, 120);
   if (!data || data.length === 0) return <div className="chart-empty">Belum ada data</div>;
 
   const w = 560;
@@ -140,7 +140,7 @@ export function LineChart({ data, height = 190, labelKey = "d", valueKey = "tota
 
 /** Radar untuk 5 dimensi kemampuan — paling pas untuk data skill. */
 export function RadarChart({ data, size = 240, max = 100 }) {
-  const sweep = useSweep(1000, 180);
+  const sweep = useSweep(1200, 200);
   if (!data || data.length === 0) return <div className="chart-empty">Belum ada data</div>;
 
   const c = size / 2;
@@ -209,7 +209,7 @@ export function RadarChart({ data, size = 240, max = 100 }) {
 export function BarChart({ data, height = 170, format = nf }) {
   // Batang naik sedikit demi sedikit dengan delay per kolom supaya terlihat
   // seperti grow, bukan semua muncul bersamaan.
-  const sweep = useSweep(900);
+  const sweep = useSweep(1050);
   if (!data || data.length === 0) return <div className="chart-empty">Belum ada data</div>;
 
   const max = Math.max(...data.map((d) => Number(d.value) || 0), 1);
