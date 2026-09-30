@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import Meter from "../components/Meter";
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
 import mascotUrl from "../assets/mascot.png";
@@ -85,10 +86,10 @@ export default function Expenses() {
           <p className="meter-total">{rupiah(spent)}</p>
           <p className="meter-sub">{t("ex.fromBudget", { budget: rupiah(budget || 0) })}</p>
           <div className="bar">
-            <span
-              className={"bar-fill " + (info.status === "over" ? "danger" : info.status === "warn" ? "warn" : "")}
-              style={{ width: Math.min(100, info.pct) + "%" }}
-            />
+                <Meter
+                  value={info.pct}
+                  tone={info.status === "over" ? "danger" : info.status === "warn" ? "warn" : ""}
+                />
           </div>
           <p className="meter-hint">{t("ex.pctHint", { pct: info.pct })}</p>
         </div>

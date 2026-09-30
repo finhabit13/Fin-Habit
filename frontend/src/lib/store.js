@@ -475,8 +475,21 @@ export const store = {
     throw new Error("Akses admin ditolak");
   },
 
+  // Mode demo tidak punya tabel banner, jadi carousel-nya tidak akan pernah
+  // tampil. Buka /?banners=1 saat dev untuk melihatnya tanpa seeding database.
   async banners() {
     await delay();
+    if (import.meta.env.DEV && new URLSearchParams(location.search).has("banners")) {
+      const swatch = (c) =>
+        `data:image/svg+xml,${encodeURIComponent(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='750' height='280'><rect width='750' height='280' fill='${c}'/><text x='375' y='150' font-size='40' fill='#fff' text-anchor='middle' font-family='sans-serif'>BANNER</text></svg>`
+        )}`;
+      return [
+        { id: "b1", image: swatch("#2563eb"), caption: "Belanja bulanan lebih tenang" },
+        { id: "b2", image: swatch("#0d9488"), caption: "Tabung dan target menipis" },
+        { id: "b3", image: swatch("#7c3aed"), caption: "Upgrade skill tiap minggu" }
+      ];
+    }
     return [];
   },
 

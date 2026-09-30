@@ -1,4 +1,5 @@
 import Glyph from "../lib/glyphs";
+import Meter from "../components/Meter";
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
@@ -49,7 +50,7 @@ export default function Family() {
                 </div>
               </div>
               <div className="bar">
-                <span className="bar-fill green" style={{ width: (done ? 100 : 35) + "%" }} />
+                <Meter value={done ? 100 : 35} tone="green" />
               </div>
               <span className="reward">{m.reward}</span>
               {done ? (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import Meter from "../components/Meter";
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
@@ -66,10 +67,10 @@ export default function Budget() {
             {t("bu.fromSpent", { budget: rupiah(data.budget), pct: data.pct })}
           </p>
           <div className="bar">
-            <span
-              className={"bar-fill " + (status === "over" ? "danger" : status === "warn" ? "warn" : "")}
-              style={{ width: pctWidth + "%" }}
-            />
+                <Meter
+                  value={pctWidth}
+                  tone={status === "over" ? "danger" : status === "warn" ? "warn" : ""}
+                />
           </div>
           <p className="muted small">{t("bu." + status + "Hint")}</p>
         </div>

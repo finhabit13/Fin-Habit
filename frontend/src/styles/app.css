@@ -28,6 +28,14 @@
   --radius-sm: 12px;
   --shadow-mid: 0 8px 24px rgba(14, 42, 71, 0.1);
   --shadow-lg: 0 18px 44px rgba(14, 42, 71, 0.16);
+
+  /* Gerak: satu set token supaya durasi dan easing konsisten di seluruh app.
+     -out untuk masuk (melambatMulut di akhir), -in-out untuk gerak bolak-balik. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-1: 140ms;
+  --dur-2: 240ms;
+  --dur-3: 420ms;
 }
 
 *,
@@ -345,7 +353,9 @@ img.avatar {
   stroke-linecap: round;
   stroke-dasharray: 326.7;
   stroke-dashoffset: 326.7;
-  transition: stroke-dashoffset 1s cubic-bezier(0.3, 1, 0.4, 1);
+  /* Tanpa transition: cincin dianimasikan lewat rAF dari ScoreRing supaya
+     garisnya dan angka di tengah bisa jalan dari satu clock yang sama.
+     Kalau dua-duanya transitioned, cincin tertinggal dari angkanya. */
 }
 
 .score-hero .ring-bg {
@@ -1154,6 +1164,7 @@ select:focus-visible {
 
 .modal-backdrop.open {
   display: flex;
+  animation: fade-in var(--dur-2) var(--ease-out) both;
 }
 
 .modal {
@@ -1164,6 +1175,27 @@ select:focus-visible {
   border-radius: 24px 24px 0 0;
   padding: 26px 20px calc(30px + env(safe-area-inset-bottom));
   position: relative;
+  animation: sheet-up var(--dur-3) var(--ease-out) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-close {
@@ -1454,23 +1486,38 @@ select:focus-visible {
   background: var(--blue-soft);
 }
 
+/* Track scroll native: platform yang menangani momentum dan snap, jadi
+   swipe di HP terasa licin. Jangan pakai transform di sini. */
 .banner-slide {
   display: flex;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
-.banner-slide-inner {
-  display: flex;
-  transition: transform 0.45s ease;
+.banner-slide::-webkit-scrollbar {
+  display: none;
 }
 
 .banner-item {
   flex: 0 0 100%;
+  min-width: 0;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   position: relative;
   border-radius: var(--radius);
   overflow: hidden;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  /* Tidak ada scale/opacity per slide: tiap slide persis 100% dan tidak
+     pernah peek, jadi efeknya nyaris tak terlihat tapi membuat lebar item
+     tidak rata. Yang membedakan tiap slide cuma caption di bawah. */
 }
 
 .banner-item img {
@@ -1491,11 +1538,20 @@ select:focus-visible {
   font-size: 13px;
   font-weight: 600;
   line-height: 1.4;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+}
+
+.banner-item.is-active .banner-caption {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .banner-dots {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 6px;
   padding: 8px 0 2px;
 }
@@ -1508,9 +1564,13 @@ select:focus-visible {
   background: var(--blue-line);
   cursor: pointer;
   padding: 0;
+  transition: width var(--dur-2) var(--ease-out),
+    background-color var(--dur-2) var(--ease-out);
 }
 
 .banner-dot.is-active {
+  /* Titik aktif memanjang seperti indikator, bukan hanya ganti warna. */
+  width: 22px;
   background: var(--blue);
 }
 
@@ -2166,6 +2226,7 @@ select:focus-visible {
 
 .success-overlay.open {
   display: flex;
+  animation: fade-in var(--dur-2) var(--ease-out) both;
 }
 
 .success-box {
@@ -2175,6 +2236,18 @@ select:focus-visible {
   text-align: center;
   max-width: 300px;
   box-shadow: var(--shadow-lg);
+  animation: pop-in var(--dur-3) var(--ease-out) both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .success-check {
@@ -2216,7 +2289,7 @@ select:focus-visible {
   border-radius: 99px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-3) var(--ease-out);
   z-index: 60;
   white-space: nowrap;
   max-width: min(90vw, 480px);
@@ -3047,7 +3120,8 @@ select:focus-visible {
 .bar-chart-fill {
   width: 100%;
   border-radius: 7px 7px 0 0;
-  transition: height 0.4s ease;
+  /* Tinggi dianimasikan dari rAF (lihat BarChart), bukan transition, supaya
+     tidak tertinggal dari clock yang sama. */
 }
 
 .bar-chart-label {
@@ -3465,11 +3539,155 @@ select:focus-visible {
 
 /* ================= Aksesibilitas ================= */
 
+/* ================= Gerak =================
+   Satu tempat untuk transisi yang bukan terkait perubahan state, supaya
+   app tidak monoton tanpa harus sprinkle animasi di tiap komponen.
+   Semua motion di blok ini otomatis dimatikan oleh blok
+   prefers-reduced-motion di bawah file ini.
+   ====================================================== */
+
+/* Halaman masuk: naik sedikit lalu selesai. Dipicu lewat key pada wrapper
+   halaman, jadi tiap navigasi mengulang animasi dari nol. */
+.page-enter {
+  animation: page-in var(--dur-3) var(--ease-out) both;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Kartu dan baris yang masuk bertahap. --d diisi dari indeks supaya tidak
+   butuh banyak keyframe terpisah. */
+.rise {
+  animation: rise-in var(--dur-3) var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tekanan tombol: memberi konfirmasi sentuh di HP tanpa delay. */
+.btn,
+.nav-item,
+.side-link,
+.icon-btn,
+.tab,
+.answer-opt,
+.banner-dot,
+.leader-row,
+.admin-nav-link {
+  transition: transform var(--dur-1) var(--ease-out),
+    background-color var(--dur-2) var(--ease-out),
+    border-color var(--dur-2) var(--ease-out),
+    color var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+
+.btn:active,
+.nav-item:active,
+.side-link:active,
+.icon-btn:active,
+.tab:active,
+.answer-opt:active,
+.leader-row:active {
+  transform: scale(0.97);
+}
+
+/* Kartu yang bisa diklik diberi respons hover, tapi hanya di perangkat yang
+   benar-benar punya pointer, supaya tidak ikut terpicu saat tap di HP. */
+@media (hover: hover) and (pointer: fine) {
+  .card-press {
+    cursor: pointer;
+    transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+  }
+
+  .card-press:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-mid);
+  }
+}
+
+/* Skeleton untuk state loading supaya tidak cuma teks "Loading..." yang
+   diam di layar. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  color: transparent;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: shimmer 1.4s var(--ease-in-out) infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Angka yang berubah (poin, streak, saldo) diberi denyut singkat supaya
+   mata/user tahu ada nilai baru. */
+.tick {
+  animation: tick var(--dur-3) var(--ease-out);
+}
+
+@keyframes tick {
+  0% {
+    transform: translateY(-4px);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Lencana admin "Kamu" muncul halus, tidak muncul mendadak. */
+.tag-anim {
+  animation: tag-in var(--dur-2) var(--ease-out) both;
+}
+
+@keyframes tag-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation: none !important;
     transition: none !important;
+    /* scroll-behavior bukan animation/transition, jadi harus dimatikan
+       sendiri; tanpa ini carousel tetap bergeser halus. */
+    scroll-behavior: auto !important;
   }
 }

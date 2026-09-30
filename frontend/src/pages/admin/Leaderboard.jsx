@@ -44,7 +44,11 @@ export default function Leaderboard() {
         {board.length ? (
           <div className="leader-list">
             {board.map((b, i) => (
-              <div key={b.id} className={"leader-row leader-row-full" + (b.banned ? " is-banned" : "")}>
+              <div
+                key={b.id}
+                className={"leader-row leader-row-full rise" + (b.banned ? " is-banned" : "")}
+                style={{ "--d": `${Math.min(i, 10) * 40}ms` }}
+              >
                 <span className={"leader-rank " + (MEDALS[i] || "")}>
                   {MEDALS[i] ? <Glyph name="medal" size={16} /> : b.rank}
                 </span>
@@ -55,7 +59,7 @@ export default function Leaderboard() {
                   <span className="leader-name">
                     {b.name}
                     {b.role === "admin" && <span className="tag admin">{t("ad.adminRole")}</span>}
-                    {b.banned && <span className="tag banned">{t("ad.banned")}</span>}
+                    {b.banned && <span className="tag banned tag-anim">{t("ad.banned")}</span>}
                   </span>
                   <span className="leader-sub">
                     <span className="leader-pill">{t("lb.streak", { n: b.streak })}</span>

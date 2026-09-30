@@ -3,12 +3,15 @@
  * dim_avg (5 dimensi), score_bands, points_bands, daily_expenses.
  */
 
+import useSweep from "../lib/useSweep";
+
 const PALETTE = ["#2563eb", "#12a37b", "#d97706", "#dc2626", "#0e2a47"];
 
 const nf = (n) => Number(n || 0).toLocaleString("id-ID");
 
 /** Donut untuk sebaran kategori. Dipakai untuk score_bands. */
 export function DonutChart({ data, size = 168, thickness = 26, centerLabel, centerValue }) {
+  const sweep = useSweep(1000, 120);
   const total = data.reduce((s, d) => s + (Number(d.value) || 0), 0);
 
   if (!total) {
@@ -26,7 +29,9 @@ export function DonutChart({ data, size = 168, thickness = 26, centerLabel, cent
         <circle cx={c} cy={c} r={r} fill="none" stroke="#e2e8f2" strokeWidth={thickness} />
         {data.map((d, i) => {
           const frac = (Number(d.value) || 0) / total;
-          const len = frac * circ;
+          // Panjang busur tumbuh dari 0, jadi donut terlihat terisi bukan
+          // langsung muncul penuh.
+          const len = frac * circ * sweep;
           const el = (
             <circle
               key={d.label}
@@ -71,6 +76,7 @@ export function DonutChart({ data, size = 168, thickness = 26, centerLabel, cent
 
 /** Garis tren untuk 14 hari terakhir. */
 export function LineChart({ data, height = 190, labelKey = "d", valueKey = "total", format = nf }) {
+  const sweep = useSweep(1100, 100);
   if (!data || data.length === 0) return <div className="chart-empty">Belum ada data</div>;
 
   const w = 560;
@@ -85,8 +91,15 @@ export function LineChart({ data, height = 190, labelKey = "d", valueKey = "tota
   const x = (i) => pad.l + (data.length === 1 ? iw / 2 : (i / (data.length - 1)) * iw);
   const y = (v) => pad.t + ih - (v / max) * ih;
 
-  const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  const area = `${line} L${x(values.length - 1).toFixed(1)},${(pad.t + ih).toFixed(1)} L${x(0).toFixed(1)},${(
+  // Garis digambar dari kiri ke kanan: titik yang belum terjangkau sweep
+  // ikut bergerak mengikuti nilai sweep, jadi ujungnya bukan terpotong
+  // tajam tapi meluncur keluar.
+  const seen = Math.max(2, Math.ceil(values.length * sweep) + 1);
+  const line = values
+    .slice(0, seen)
+    .map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
+    .join(" ");
+  const area = `${line} L${x(seen - 1).toFixed(1)},${(pad.t + ih).toFixed(1)} L${x(0).toFixed(1)},${(
     pad.t + ih
   ).toFixed(1)} Z`;
 
@@ -106,11 +119,13 @@ export function LineChart({ data, height = 190, labelKey = "d", valueKey = "tota
       <path d={area} fill="rgba(37, 99, 235, 0.1)" />
       <path d={line} fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
 
-      {values.map((v, i) => (
-        <circle key={i} cx={x(i)} cy={y(v)} r="3.5" fill="#fff" stroke="#2563eb" strokeWidth="2">
-          <title>{`${data[i][labelKey]}: ${format(v)}`}</title>
-        </circle>
-      ))}
+      {values.map((v, i) =>
+        i < seen ? (
+          <circle key={i} cx={x(i)} cy={y(v)} r="3.5" fill="#fff" stroke="#2563eb" strokeWidth="2">
+            <title>{`${data[i][labelKey]}: ${format(v)}`}</title>
+          </circle>
+        ) : null
+      )}
 
       {data.map((d, i) =>
         i % 3 === 0 || i === data.length - 1 ? (
@@ -125,6 +140,7 @@ export function LineChart({ data, height = 190, labelKey = "d", valueKey = "tota
 
 /** Radar untuk 5 dimensi kemampuan — paling pas untuk data skill. */
 export function RadarChart({ data, size = 240, max = 100 }) {
+  const sweep = useSweep(1000, 180);
   if (!data || data.length === 0) return <div className="chart-empty">Belum ada data</div>;
 
   const c = size / 2;
@@ -137,7 +153,11 @@ export function RadarChart({ data, size = 240, max = 100 }) {
     return [c + Math.cos(a) * r * frac, c + Math.sin(a) * r * frac];
   };
 
-  const poly = data.map((d, i) => pt(i, Math.min(1, (Number(d.value) || 0) / max)).map((v) => v.toFixed(1)).join(",")).join(" ");
+  // Poligon mengembang dari pusat ke nilai akhir.
+  const frac = (d) => Math.min(1, (Number(d.value) || 0) / max) * sweep;
+  const poly = data
+    .map((d, i) => pt(i, frac(d)).map((v) => v.toFixed(1)).join(","))
+    .join(" ");
 
   return (
     <div className="radar-wrap">
@@ -158,7 +178,7 @@ export function RadarChart({ data, size = 240, max = 100 }) {
 
         <polygon points={poly} fill="rgba(37, 99, 235, 0.18)" stroke="#2563eb" strokeWidth="2" />
         {data.map((d, i) => {
-          const [x, y] = pt(i, Math.min(1, (Number(d.value) || 0) / max));
+          const [x, y] = pt(i, frac(d));
           return <circle key={d.label} cx={x} cy={y} r="3" fill="#2563eb" />;
         })}
 
@@ -187,24 +207,34 @@ export function RadarChart({ data, size = 240, max = 100 }) {
 
 /** Batang vertikal, untuk sebaran poin. */
 export function BarChart({ data, height = 170, format = nf }) {
+  // Batang naik sedikit demi sedikit dengan delay per kolom supaya terlihat
+  // seperti grow, bukan semua muncul bersamaan.
+  const sweep = useSweep(900);
   if (!data || data.length === 0) return <div className="chart-empty">Belum ada data</div>;
 
   const max = Math.max(...data.map((d) => Number(d.value) || 0), 1);
 
   return (
     <div className="bar-chart" style={{ "--bar-max": max }}>
-      {data.map((d, i) => (
-        <div key={d.label} className="bar-chart-col">
-          <span className="bar-chart-value">{format(d.value)}</span>
-          <div className="bar-chart-track">
-            <div
-              className="bar-chart-fill"
-              style={{ height: Math.max(3, ((Number(d.value) || 0) / max) * 100) + "%", background: d.color }}
-            />
+      {data.map((d, i) => {
+        const col = Math.min(1, sweep * 1.35 - i * 0.1);
+        const shown = Math.max(0, Math.min(1, col));
+        return (
+          <div key={d.label} className="bar-chart-col">
+            <span className="bar-chart-value">{format(d.value)}</span>
+            <div className="bar-chart-track">
+              <div
+                className="bar-chart-fill"
+                style={{
+                  height: Math.max(3, ((Number(d.value) || 0) / max) * 100 * shown) + "%",
+                  background: d.color
+                }}
+              />
+            </div>
+            <span className="bar-chart-label">{d.label}</span>
           </div>
-          <span className="bar-chart-label">{d.label}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import mascotUrl from "../assets/mascot.png";
+import Meter from "../components/Meter";
 import { useApp } from "../context/AppContext";
 import Glyph from "../lib/glyphs";
 import { useI18n } from "../lib/i18n";
@@ -74,7 +75,7 @@ export default function Admin() {
             <b>{stats?.avg_score ?? 0}</b>
           </div>
           <div className="bar">
-            <span className="bar-fill" style={{ width: (stats?.avg_score ?? 0) + "%" }} />
+                <Meter value={stats?.avg_score ?? 0} />
           </div>
         </div>
         <div className="break-row">
@@ -83,10 +84,7 @@ export default function Admin() {
             <b>{stats?.avg_points ?? 0}</b>
           </div>
           <div className="bar">
-            <span
-              className="bar-fill"
-              style={{ width: Math.min(100, (stats?.avg_points ?? 0)) + "%" }}
-            />
+                <Meter value={stats?.avg_points ?? 0} />
           </div>
         </div>
         <div className="break-row">
@@ -95,10 +93,7 @@ export default function Admin() {
             <b>{stats?.avg_streak ?? 0}</b>
           </div>
           <div className="bar">
-            <span
-              className="bar-fill"
-              style={{ width: Math.min(100, (stats?.avg_streak ?? 0)) + "%" }}
-            />
+                <Meter value={stats?.avg_streak ?? 0} />
           </div>
         </div>
         <p className="muted small">

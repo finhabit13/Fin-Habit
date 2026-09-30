@@ -43,7 +43,11 @@ export default function Leaderboard() {
         {rows.map((r, i) => {
           const isMe = r.id === meId;
           return (
-            <div key={r.id} className={"leader-row leader-row-full" + (isMe ? " is-me" : "")}>
+            <div
+              key={r.id}
+              className={"leader-row leader-row-full rise" + (isMe ? " is-me" : "")}
+              style={{ "--d": `${Math.min(i, 10) * 40}ms` }}
+            >
               <span className={"leader-rank " + (MEDALS[i] || "")}>
                 {MEDALS[i] ? <Glyph name="medal" size={16} /> : i + 1}
               </span>
@@ -51,7 +55,7 @@ export default function Leaderboard() {
               <span className="leader-identity">
                 <span className="leader-name">
                   {r.name}
-                  {isMe && <span className="tag">{t("lb.you")}</span>}
+                  {isMe && <span className="tag tag-anim">{t("lb.you")}</span>}
                 </span>
                 <span className="leader-sub">
                   <span className="leader-pill">{t("lb.streak", { n: r.streak })}</span>

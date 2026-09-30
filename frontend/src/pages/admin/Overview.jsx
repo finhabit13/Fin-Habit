@@ -77,8 +77,8 @@ export default function Overview() {
       <section className="admin-section">
         <h2 className="section-title">{t("ad.overview")}</h2>
         <div className="stat-row">
-          {head.map((h) => (
-            <div key={h.lab} className="stat">
+          {head.map((h, i) => (
+            <div key={h.lab} className="stat rise" style={{ "--d": `${i * 60}ms` }}>
               <span className="stat-num">{h.num}</span>
               <span className="stat-lab">{h.lab}</span>
             </div>
@@ -131,7 +131,7 @@ export default function Overview() {
           {top.length ? (
             <ol className="top-user-list">
               {top.map((u, i) => (
-                <li key={u.id}>
+                <li key={u.id} className="rise" style={{ "--d": `${Math.min(i, 8) * 45}ms` }}>
                   <span className={"leader-rank " + (i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "")}>
                     {i < 3 ? <Glyph name="medal" size={15} /> : i + 1}
                   </span>

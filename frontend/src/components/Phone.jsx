@@ -114,7 +114,9 @@ export default function Phone() {
       {demo && <div className="demo-banner demo-banner-mobile">{t("nav.demoBanner")}</div>}
 
       <main className="screen-area" id="screenArea">
-        <Page />
+        <div key={page} className="page-enter">
+          <Page />
+        </div>
       </main>
 
       <nav className="bottom-nav" aria-label={t("nav.mainMenu")}>

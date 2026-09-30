@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import Meter from "../components/Meter";
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
@@ -126,7 +127,7 @@ export default function Saving() {
           </div>
         </div>
         <div className="bar">
-          <span className="bar-fill green" style={{ width: pct + "%" }} />
+          <Meter value={pct} tone="green" />
         </div>
         <p className="muted small">
           {pct >= 100

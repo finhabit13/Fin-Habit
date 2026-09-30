@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import BannerCarousel from "../components/BannerCarousel";
+import Meter from "../components/Meter";
 import ScoreRing from "../components/ScoreRing";
 import { useApp } from "../context/AppContext";
 import Glyph from "../lib/glyphs";
@@ -44,7 +45,7 @@ export default function Home() {
       {banners.length > 0 && <BannerCarousel banners={banners} />}
 
       {warn && (
-        <button className={"card limit-card " + budget.status} onClick={() => go("budget")}>
+        <button className={"card card-press limit-card rise " + budget.status} style={{ "--d": "40ms" }} onClick={() => go("budget")}>
           <div className="limit-head">
             <span className="limit-ico">
               <Glyph name="warn" size={18} />
@@ -84,7 +85,7 @@ export default function Home() {
           <span className="pill">{pct}%</span>
         </div>
         <div className="bar">
-          <span className="bar-fill" style={{ width: pct + "%" }} />
+          <Meter value={pct} />
         </div>
         <p className="muted small">
           {t("home.progressSub", { done: user.todayDone, total: user.todayTotal })}
@@ -98,8 +99,12 @@ export default function Home() {
         </div>
         <h3 className="challenge-title">{t("ch.todayList")}</h3>
         <ul className="home-today-list">
-          {todays.map((c) => (
-            <li key={c.id} className={(user.challengeDate || {})[c.id] === todayKey() ? "is-done" : ""}>
+          {todays.map((c, i) => (
+            <li
+              key={c.id}
+              className={"rise " + ((user.challengeDate || {})[c.id] === todayKey() ? "is-done" : "")}
+              style={{ "--d": `${i * 50}ms` }}
+            >
               <span className="home-today-title">{c.title}</span>
               <span className="muted small">
                 +{c.pts} {t("common.points")}
@@ -159,15 +164,15 @@ export default function Home() {
       </div>
 
       <div className="stat-row">
-        <div className="stat">
+        <div className="stat rise" style={{ "--d": "0ms" }}>
           <span className="stat-num">{user.streak}</span>
           <span className="stat-lab">{t("home.statStreak")}</span>
         </div>
-        <div className="stat">
+        <div className="stat rise" style={{ "--d": "60ms" }}>
           <span className="stat-num">{user.points}</span>
           <span className="stat-lab">{t("home.statPoints")}</span>
         </div>
-        <div className="stat">
+        <div className="stat rise" style={{ "--d": "120ms" }}>
           <span className="stat-num">{user.challengesDone || 0}</span>
           <span className="stat-lab">{t("home.statChallenge")}</span>
         </div>

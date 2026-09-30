@@ -1,3 +1,4 @@
+import Meter from "../components/Meter";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
 import Glyph from "../lib/glyphs";
@@ -50,7 +51,7 @@ export default function Learn() {
           <span className="pill">{pct}%</span>
         </div>
         <div className="bar">
-          <span className="bar-fill" style={{ width: pct + "%" }} />
+          <Meter value={pct} />
         </div>
         <p className="muted small">
           {t("learn.progressSub", { done, total: totalLessons })}

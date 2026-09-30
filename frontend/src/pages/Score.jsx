@@ -1,3 +1,4 @@
+import Meter from "../components/Meter";
 import ScoreRing from "../components/ScoreRing";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
@@ -34,7 +35,7 @@ export default function Score() {
                 <b>{v}</b>
               </div>
               <div className="bar">
-                <span className="bar-fill" style={{ width: v + "%" }} />
+                <Meter value={v} />
               </div>
             </div>
           );

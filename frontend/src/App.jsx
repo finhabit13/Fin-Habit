@@ -70,7 +70,9 @@ function Root() {
     return (
       <>
         <AdminShell path={path} go={go}>
-          <div key={path}>{page}</div>
+          <div key={path} className="page-enter">
+            {page}
+          </div>
         </AdminShell>
         <Toast />
       </>
