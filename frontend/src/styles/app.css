@@ -1590,6 +1590,38 @@ select:focus-visible {
   font-size: 13px;
 }
 
+/* Placeholder banner.TINGGI kotak ini harus sama persis dengan carousel
+   sungguhan, karena itulah satu-satunya cara supaya kemunculan banner tidak
+   menggeser isi halaman. Yang menentukan tinggi adalah .banner-skeleton-body
+   yang aspect-ratios-nya sama dengan .banner-item img, dan baris titiknya
+   memakai ulang .banner-dots. Jangan di-hardcode tinggi di sini. */
+.banner-skeleton {
+  cursor: default;
+}
+
+.banner-skeleton-body {
+  aspect-ratio: 750 / 280;
+  background: var(--blue-line);
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-skeleton-body.is-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: shimmer 1.4s var(--ease-in-out) infinite;
+}
+
+.banner-skeleton-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--blue-line);
+}
+
 /* ---- Admin banner form ---- */
 
 .banner-form {

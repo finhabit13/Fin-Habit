@@ -12,7 +12,11 @@ export default function Home() {
   const { user, go, run, challenges } = useApp();
   const { t, content } = useI18n();
   const [budget, setBudget] = useState(null);
-  const [banners, setBanners] = useState([]);
+  // null berarti masih memuat, [] berarti sudah selesai dan memang tidak ada
+  // banner. Kalau keduanya disamakan, tidak ada cara menampilkan placeholder
+  // tanpa ikut menampilkan placeholder terus-terusan saat memang tidak ada
+  // banner sama sekali.
+  const [banners, setBanners] = useState(null);
 
   useEffect(() => {
     run(async (s) => {
@@ -42,7 +46,7 @@ export default function Home() {
       </p>
       <h1 className="greet-big">{t("home.headline")}</h1>
 
-      {banners.length > 0 && <BannerCarousel banners={banners} />}
+      <BannerCarousel banners={banners || []} loading={banners === null} />
 
       {warn && (
         <button className={"card card-press limit-card rise " + budget.status} style={{ "--d": "90ms" }} onClick={() => go("budget")}>

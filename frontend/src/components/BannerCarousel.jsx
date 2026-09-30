@@ -2,11 +2,40 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const AUTOPLAY_MS = 5200;
 const RESUME_MS = 9000;
+// Kerangka hanya ditampilkan setelah data lewat ambang ini, supaya banner yang
+// sebenarnya sudah tersimpan di cache tidak kedip jadi abu-abu dulu.
+const SKELETON_DELAY_MS = 180;
 
 /** Kalau pengguna minta reduced motion, lompat langsung tanpa animasi. */
 function prefersReducedMotion() {
   return (
     typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/**
+ * Placeholder saat banner belum termuat.
+ *
+ * Sengaja memakai class `.banner-carousel` dan `.banner-dots` yang sama dengan
+ * carousel asli, dan 正文-nya memakai aspect-ratio yang sama dengan
+ * `.banner-item img`. Jadi tinggi kotaknya berasal dari aturan yang sama,
+ * bukan angka yang disalin ulang; saat banner muncul, tinggi ini sudah pas
+ * dan elemen di bawahnya tidak bergeser.
+ */
+function BannerSkeleton({ shimmer }) {
+  return (
+    <div
+      className="banner-carousel banner-skeleton"
+      aria-hidden="true"
+      aria-busy="true"
+    >
+      <div className={"banner-skeleton-body" + (shimmer ? " is-shimmer" : "")} />
+      <div className="banner-dots">
+        <span className="banner-skeleton-dot" />
+        <span className="banner-skeleton-dot" />
+        <span className="banner-skeleton-dot" />
+      </div>
+    </div>
   );
 }
 
@@ -20,8 +49,9 @@ function prefersReducedMotion() {
  * scroll compositor milik platform, jadi swipe dapat momentum dan snap-nya
  * gratis di HP.
  */
-export default function BannerCarousel({ banners, onTap }) {
+export default function BannerCarousel({ banners, onTap, loading = false }) {
   const [i, setI] = useState(0);
+  const [shimmerOn, setShimmerOn] = useState(false);
   const count = banners.length;
   const trackRef = useRef(null);
   const pausedRef = useRef(false);
@@ -123,7 +153,20 @@ export default function BannerCarousel({ banners, onTap }) {
 
   useEffect(() => () => clearTimeout(resumeTimer.current), []);
 
-  if (count === 0) return <div className="banner-carousel banner-empty">—</div>;
+  // Ruangnya tetap dialokasikan sejak frame pertama, tapi shimmer-nya ditahan
+  // sebentar. Kalau banner sudah ada di cache, scaffold-nya tidak pernah
+  // berkedip dan halaman tetap diam.
+  useEffect(() => {
+    if (!loading) {
+      setShimmerOn(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setShimmerOn(true), SKELETON_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+  if (loading) return <BannerSkeleton shimmer={shimmerOn} />;
+  if (count === 0) return null;
 
   const open = (b) => {
     if (b.link) window.open(b.link, "_blank", "noopener,noreferrer");
