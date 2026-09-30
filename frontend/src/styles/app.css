@@ -763,6 +763,16 @@ select:focus-visible {
   color: #fff;
 }
 
+.challenge-source .btn-ghost.is-done {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.challenge-gate {
+  margin: 10px 0 0;
+  line-height: 1.45;
+}
+
 .challenge-progress {
   display: flex;
   align-items: center;
@@ -2023,6 +2033,42 @@ select:focus-visible {
   white-space: nowrap;
 }
 
+/* Baris leaderboard admin: avatar lebih besar supaya profil user kelihatan. */
+.leader-row-admin {
+  padding: 14px 16px;
+  gap: 14px;
+}
+
+.leader-row-admin .avatar {
+  cursor: default;
+  flex: none;
+}
+
+.leader-identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leader-identity .leader-name {
+  flex: none;
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 15px;
+}
+
+.leader-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .admin-user {
   display: flex;
   align-items: center;
@@ -2860,6 +2906,212 @@ select:focus-visible {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+.admin-chart-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+
+.admin-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-two-col .admin-detail-title {
+  margin-top: 0;
+}
+
+.chart-empty {
+  padding: 40px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.donut-wrap,
+.radar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.donut-value {
+  font-size: 26px;
+  font-weight: 800;
+  fill: var(--navy);
+}
+
+.donut-label {
+  font-size: 11px;
+  fill: var(--muted);
+}
+
+.chart-legend,
+.radar-values {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.chart-legend li,
+.radar-values li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.chart-legend .legend-label,
+.radar-values span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-legend b,
+.radar-values b {
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.chart-legend .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.line-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.axis-label {
+  font-size: 10px;
+  fill: var(--muted);
+}
+
+.radar-label {
+  font-size: 11px;
+  fill: var(--muted);
+  font-weight: 600;
+}
+
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 170px;
+  padding-top: 8px;
+}
+
+.bar-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.bar-chart-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 5px;
+}
+
+.bar-chart-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.bar-chart-fill {
+  width: 100%;
+  border-radius: 7px 7px 0 0;
+  transition: height 0.4s ease;
+}
+
+.bar-chart-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 7px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.top-user-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.top-user-list li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+}
+
+.top-user-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.finance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finance-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.finance-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.finance-row b {
+  font-weight: 700;
+  color: var(--navy);
+  white-space: nowrap;
 }
 
 .admin-challenge-card {

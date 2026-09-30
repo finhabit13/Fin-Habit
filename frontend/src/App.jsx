@@ -36,8 +36,10 @@ function Root() {
   }, [boot]);
 
   const go = (p) => {
+    if (p === window.location.pathname) return;
     window.history.pushState({}, "", p);
     setPath(p);
+    window.scrollTo({ top: 0 });
   };
 
   useEffect(() => {
@@ -67,7 +69,9 @@ function Root() {
     const page = adminPageFor(path);
     return (
       <>
-        <AdminShell>{page}</AdminShell>
+        <AdminShell path={path} go={go}>
+          <div key={path}>{page}</div>
+        </AdminShell>
         <Toast />
       </>
     );

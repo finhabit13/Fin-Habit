@@ -832,6 +832,9 @@ export const api = {
       badges: u.badges || [],
       role: u.role || "user",
       banned: !!u.banned,
+      avatarUrl: u.avatar_url || null,
+      challengesDone: Number(u.challenges_done) || 0,
+      lastActiveDay: u.last_active_day || null,
       rank: Number(u.rank)
     }));
   },

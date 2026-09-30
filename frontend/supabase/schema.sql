@@ -208,8 +208,8 @@ create trigger profiles_guard_banned
 before update on public.profiles
 for each row execute function public.guard_banned_change();
 
--- Leaderboard admin: semua profil (termasuk admin & banned) diurutkan poin.
--- Dipakai halaman admin untuk tampilan papan peringkat lengkap.
+-- Papan peringkat admin. avatar_url ikut dikembalikan supaya baris
+-- leaderboard bisa menampilkan foto profil, bukan cuma inisial.
 create or replace function public.admin_leaderboard()
 returns jsonb
 language plpgsql
@@ -228,7 +228,8 @@ begin
   from (
     select
       id, name, points, streak, badges,
-      role, banned,
+      role, banned, avatar_url,
+      challenges_done, last_active_day,
       row_number() over (order by points desc) as rank
     from public.profiles
   ) u into v;

@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-
 import Avatar from "../../components/Avatar";
 import { useApp } from "../../context/AppContext";
 import Glyph from "../../lib/glyphs";
@@ -7,27 +5,13 @@ import { useI18n } from "../../lib/i18n";
 import AdminNav from "./AdminNav";
 
 /**
- * Kerangka dashboard admin: header, navigasi, dan area konten. Halaman
- * decrypted lewat pathname supaya tiap halaman punya URL sendiri dan bisa
- * di-bookmark/di-share.
+ * Kerangka dashboard admin: header, navigasi, dan area konten. Pathname
+ * datang dari App supaya shell dan router satu sumber kebenaran; kalau
+ * shell punya state sendiri, klik navigasi tidak akan mengganti halaman.
  */
-export default function AdminShell({ children }) {
+export default function AdminShell({ path, go, children }) {
   const { user, logout } = useApp();
   const { t } = useI18n();
-  const [path, setPath] = useState(window.location.pathname);
-
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
-
-  const go = (p) => {
-    if (p === "/admin") window.history.pushState({}, "", "/admin");
-    else window.history.pushState({}, "", p);
-    setPath(p);
-    window.scrollTo({ top: 0 });
-  };
 
   if (!user || user.role !== "admin") {
     return (

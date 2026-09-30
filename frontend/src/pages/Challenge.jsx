@@ -13,6 +13,7 @@ export default function Challenge() {
   const [currentId, setCurrentId] = useState(null);
   const [done, setDone] = useState([]);
   const [reflection, setReflection] = useState("");
+  const [opened, setOpened] = useState(false);
 
   const day = todayKey();
   const pool = challenges?.length ? challenges : content.CHALLENGES;
@@ -29,7 +30,11 @@ export default function Challenge() {
   const steps = current.steps || [];
   const allTicked = steps.length > 0 && done.length === steps.length;
   const reflectionOk = reflection.trim().length >= REFLECTION_MIN;
-  const canFinish = allTicked && reflectionOk;
+  // Challenge yang punya link sumber harus benar-benar dibuka dulu. Tanpa ini
+  // orang bisa centang semua langkah tanpa pernah menyentuh materinya.
+  const hasLink = !!current.url;
+  const sourceOk = !hasLink || opened;
+  const canFinish = allTicked && reflectionOk && sourceOk;
   const progress = steps.length ? Math.round((done.length / steps.length) * 100) : 0;
   const finishedCount = todays.filter((c) => dateMap[c.id] === day).length;
 
@@ -37,6 +42,7 @@ export default function Challenge() {
     setCurrentId(id);
     setDone([]);
     setReflection("");
+    setOpened(false);
   };
 
   const toggleStep = (i) =>
@@ -52,6 +58,10 @@ export default function Challenge() {
       showToast(t("ch.reflectionShort"));
       return;
     }
+    if (!sourceOk) {
+      showToast(t("ch.openFirst"));
+      return;
+    }
     const res = await run((s) =>
       s.completeChallenge({ challengeId: current.id, kind: current.kind, reflection: reflection.trim() })
     );
@@ -59,6 +69,7 @@ export default function Challenge() {
     if (res.data.already) return;
     setDone([]);
     setReflection("");
+    setOpened(false);
     showSuccess(t("ch.doneTitle"), "+" + current.pts + " " + t("common.points"));
   };
 
@@ -92,8 +103,14 @@ export default function Challenge() {
             <span className="muted small">
               {t("ch.source")}: <strong>{current.source}</strong>
             </span>
-            <a className="btn-ghost" href={current.url} target="_blank" rel="noreferrer noopener">
-              {t("ch.openSource")}
+            <a
+              className={"btn-ghost" + (opened ? " is-done" : "")}
+              href={current.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={() => setOpened(true)}
+            >
+              {opened ? t("ch.sourceOpened") : t("ch.openSource")}
             </a>
           </div>
         ) : (
@@ -127,6 +144,10 @@ export default function Challenge() {
             onChange={(e) => setReflection(e.target.value)}
           />
         </label>
+
+        {hasLink && !opened && !doneToday && (
+          <p className="challenge-gate muted small">{t("ch.gateHint")}</p>
+        )}
 
         <button className="btn btn-primary btn-block" disabled={doneToday || !canFinish} onClick={complete}>
           {doneToday ? t("ch.doneToday") : t("ch.doIt")}
