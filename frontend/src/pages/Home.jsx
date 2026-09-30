@@ -5,10 +5,10 @@ import ScoreRing from "../components/ScoreRing";
 import { useApp } from "../context/AppContext";
 import Glyph from "../lib/glyphs";
 import { useI18n } from "../lib/i18n";
-import { challengeOfTheDay, greeting, overallScore, rupiah, scoreTitle, todayKey } from "../lib/util";
+import { dailyChallenges, greeting, overallScore, rupiah, scoreTitle, todayKey } from "../lib/util";
 
 export default function Home() {
-  const { user, go, run } = useApp();
+  const { user, go, run, challenges } = useApp();
   const { t, content } = useI18n();
   const [budget, setBudget] = useState(null);
   const [banners, setBanners] = useState([]);
@@ -30,8 +30,8 @@ export default function Home() {
   const s = overallScore(user.dims);
   const diff = s - user.lastWeek;
   const pct = user.todayTotal ? Math.round((user.todayDone / user.todayTotal) * 100) : 0;
-  const challenge = challengeOfTheDay(content.CHALLENGES);
-  const doneToday = (user.challengeDate || {})[challenge.id] === todayKey();
+  const todays = dailyChallenges(challenges?.length ? challenges : content.CHALLENGES, 3, todayKey());
+  const doneCount = todays.filter((c) => (user.challengeDate || {})[c.id] === todayKey()).length;
   const warn = budget && (budget.status === "warn" || budget.status === "over");
 
   return (
@@ -91,14 +91,24 @@ export default function Home() {
         </p>
       </div>
 
-      <div className={"card challenge-card" + (doneToday ? " is-done" : "")}>
-        <span className="tag">{t("home.dailyLabel")}</span>
-        <h3 className="challenge-title">{challenge.title}</h3>
-        <p className="challenge-meta">
-          {challenge.min} {t("common.minutes")} · +{challenge.pts} {t("common.points")}
-        </p>
+      <div className={"card challenge-card" + (doneCount === todays.length ? " is-done" : "")}>
+        <div className="row-between">
+          <span className="tag">{t("home.dailyLabel")}</span>
+          <span className="muted small">{t("ch.todayCount", { done: doneCount, total: todays.length })}</span>
+        </div>
+        <h3 className="challenge-title">{t("ch.todayList")}</h3>
+        <ul className="home-today-list">
+          {todays.map((c) => (
+            <li key={c.id} className={(user.challengeDate || {})[c.id] === todayKey() ? "is-done" : ""}>
+              <span className="home-today-title">{c.title}</span>
+              <span className="muted small">
+                +{c.pts} {t("common.points")}
+              </span>
+            </li>
+          ))}
+        </ul>
         <button className="btn btn-light" onClick={() => go("challenge")}>
-          {doneToday ? t("home.challengeDone") : t("home.challengeStart")}
+          {doneCount === todays.length ? t("home.challengeDone") : t("home.challengeStart")}
         </button>
       </div>
 

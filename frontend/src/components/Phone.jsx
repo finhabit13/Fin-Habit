@@ -1,3 +1,4 @@
+import Avatar from "./Avatar";
 import Glyph from "../lib/glyphs";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
@@ -51,7 +52,6 @@ export default function Phone() {
   const { user, page, go, demo } = useApp();
   const { t } = useI18n();
   const Page = PAGES[page] || Home;
-  const initial = (user?.name || "B").trim().charAt(0).toUpperCase();
 
   const renderLink = (n) => (
     <li key={n.id}>
@@ -88,8 +88,8 @@ export default function Phone() {
         <div className="side-foot">
           {demo && <div className="demo-banner demo-banner-side">{t("nav.demoBanner")}</div>}
           <div className="side-user">
-            <button className="avatar" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
-              {initial}
+            <button className="avatar-btn" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
+              <Avatar user={user} />
             </button>
             <div className="side-user-meta">
               <p className="side-user-name">{user?.name || t("nav.user")}</p>
@@ -106,8 +106,8 @@ export default function Phone() {
           <img className="brand-mark brand-mark-img" src="/finhabit-logo.jpeg" alt="" />
           <span className="brand-name">FINHABIT</span>
         </div>
-        <button className="avatar" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
-          {initial}
+        <button className="avatar-btn" onClick={() => go("profile")} aria-label={t("nav.openProfile")}>
+          <Avatar user={user} />
         </button>
       </header>
 

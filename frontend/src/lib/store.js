@@ -4,7 +4,8 @@
  * aplikasi tetap bisa dipakai untuk demo/kompetisi.
  */
 
-import { CASES, CHALLENGES, DEFAULT_DATA, MISSIONS } from "./data";
+import { CASES, DEFAULT_DATA, MISSIONS } from "./data";
+import { challengeById, setRemoteChallenges } from "./challenges";
 import { monthKey, todayKey, uid } from "./util";
 import { answerQuiz, applyReward, continueFree, dimOf, finishQuiz, shootForDay, startQuiz, unlockBadges } from "./rewards";
 
@@ -25,6 +26,8 @@ function seed() {
   d.lessonsDone = [];
   d.doneMissions = [];
   d.challengeCategories = [];
+  d.challengeReflections = [];
+  d.avatarUrl = null;
   d.caseIndex = 0;
   d.lastActiveDay = null;
   d.quizState = {};
@@ -62,12 +65,12 @@ function load() {
     const saved = localStorage.getItem(KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      return { user: parsed.user, expenses: parsed.expenses, challengeCategories: {} };
+      return { user: parsed.user, expenses: parsed.expenses, challenges: parsed.challenges || [] };
     }
   } catch {
     /* abaikan */
   }
-  const fresh = { user: seed(), expenses: seedExpenses(), challengeCategories: {} };
+  const fresh = { user: seed(), expenses: seedExpenses(), challenges: [] };
   persist(fresh);
   return fresh;
 }
@@ -106,6 +109,116 @@ export const store = {
   async getSessionUser() {
     await delay();
     return userView();
+  },
+
+  // Mode demo: challenge admin disimpan di localStorage supaya tetap bisa
+  // dicoba tanpa backend.
+  async challenges() {
+    await delay();
+    const list = db.challenges || [];
+    setRemoteChallenges(list);
+    return list;
+  },
+
+  async adminOverview() {
+    await delay();
+    const u = db.user;
+    const spent = db.expenses.reduce((s, e) => s + e.amount, 0);
+    const today = todayKey();
+    return {
+      users: 1,
+      users_student: 1,
+      admins: 1,
+      banned: 0,
+      active_today: u.lastActiveDay === today ? 1 : 0,
+      active_7d: 1,
+      active_30d: 1,
+      new_7d: 1,
+      new_30d: 1,
+      avg_points: u.points,
+      avg_streak: u.streak,
+      avg_challenges: u.challengesDone,
+      total_expenses: db.expenses.length,
+      total_spent: spent,
+      spent_7d: spent,
+      expenses_7d: db.expenses.length,
+      with_avatar: u.avatarUrl ? 1 : 0,
+      saving_total: u.savingCurrent,
+      saving_goal_total: u.savingGoal,
+      challenges: (db.challenges || []).length,
+      dim_avg: { ...u.dims },
+      score_bands: { starter: 0, steady: 0, smart: 0, master: 0 },
+      literacy_good: 0,
+      avg_score: 0,
+      daily_expenses: [],
+      top_users: [{ id: u.id, name: u.name, points: u.points, streak: u.streak, avatar_url: u.avatarUrl }],
+      points_bands: { "0_99": 0, "100_299": 0, "300_599": 0, "600_1199": 0, "1200plus": 0 }
+    };
+  },
+
+  async adminChallenges() {
+    await delay();
+    return db.challenges || [];
+  },
+
+  async adminAddChallenge(body) {
+    await delay();
+    const row = {
+      id: uid(),
+      cat: body.kind,
+      kind: body.kind,
+      title: (body.title || "").trim(),
+      desc: (body.desc || "").trim(),
+      source: (body.source || "").trim(),
+      url: (body.url || "").trim(),
+      steps: (body.steps || []).map((s) => String(s).trim()).filter(Boolean),
+      min: Number(body.minutes) || 5,
+      pts: Number(body.points) || 20,
+      dim: body.dim || "goal",
+      active: body.active !== false,
+      position: Number(body.position) || 0,
+      createdAt: new Date().toISOString()
+    };
+    db.challenges = [...(db.challenges || []), row];
+    persist();
+    setRemoteChallenges(db.challenges);
+    return row;
+  },
+
+  async adminUpdateChallenge({ id, ...body }) {
+    await delay();
+    const list = db.challenges || [];
+    const next = list.map((x) =>
+      x.id === id
+        ? {
+            ...x,
+            kind: body.kind,
+            cat: body.kind,
+            title: (body.title || "").trim(),
+            desc: (body.desc || "").trim(),
+            source: (body.source || "").trim(),
+            url: (body.url || "").trim(),
+            steps: (body.steps || []).map((s) => String(s).trim()).filter(Boolean),
+            min: Number(body.minutes) || 5,
+            pts: Number(body.points) || 20,
+            dim: body.dim || "goal",
+            active: body.active !== false,
+            position: Number(body.position) || 0
+          }
+        : x
+    );
+    db.challenges = next;
+    persist();
+    setRemoteChallenges(next);
+    return next.find((x) => x.id === id);
+  },
+
+  async adminDeleteChallenge({ id }) {
+    await delay();
+    db.challenges = (db.challenges || []).filter((x) => x.id !== id);
+    persist();
+    setRemoteChallenges(db.challenges);
+    return { ok: true };
   },
 
   async register({ name, email }) {
@@ -147,6 +260,24 @@ export const store = {
     if (body.caseIndex != null) db.user.caseIndex = body.caseIndex;
     persist();
     return userView();
+  },
+
+  // Di mode demo tidak ada Supabase Storage, jadi foto disimpan sebagai data URL.
+  async uploadAvatar(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("Gagal membaca file foto"));
+      reader.readAsDataURL(file);
+    });
+  },
+
+  async updateIdentity({ name, avatarUrl }) {
+    await delay();
+    if (name) db.user.name = name;
+    if (avatarUrl !== undefined) db.user.avatarUrl = avatarUrl;
+    persist();
+    return { user: userView() };
   },
 
   async reset() {
@@ -233,14 +364,17 @@ export const store = {
     return { user: userView() };
   },
 
-  async completeChallenge({ challengeId, chips }) {
+  async completeChallenge({ challengeId, kind, reflection }) {
     await delay();
     const u = db.user;
     const today = todayKey();
     if (u.challengeDate[challengeId] === today) return { already: true, user: userView() };
-    const ch = CHALLENGES.find((c) => c.id === challengeId) || {};
-    if (chips && chips.length) {
-      u.challengeCategories = [...(u.challengeCategories || []), ...chips.filter((c) => !u.challengeCategories.includes(c))];
+    const ch = challengeById(challengeId);
+    if (kind && !u.challengeCategories.includes(kind)) {
+      u.challengeCategories = [...(u.challengeCategories || []), kind];
+    }
+    if (reflection) {
+      u.challengeReflections = [...(u.challengeReflections || []), { id: challengeId, date: today, text: reflection }];
     }
     u.challengeDate[challengeId] = today;
     if (!u.doneChallenges.includes(challengeId)) {

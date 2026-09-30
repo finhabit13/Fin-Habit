@@ -2,7 +2,8 @@
 // bisa memakai keduanya secara bergantian (demo vs live).
 
 import { createClient } from "@supabase/supabase-js";
-import { CHALLENGES, MISSIONS } from "./data";
+import { MISSIONS } from "./data";
+import { challengeById, setRemoteChallenges } from "./challenges";
 import {
   answerQuiz,
   applyReward,
@@ -90,6 +91,8 @@ function toUser(row) {
     doneChallenges: row.done_challenges,
     challengeDate: row.challenge_date,
     challengeCategories: row.challenge_categories || [],
+    challengeReflections: row.challenge_reflections || [],
+    avatarUrl: row.avatar_url || null,
     caseIndex: row.case_index,
     doneMissions: row.done_missions,
     badges: row.badges,
@@ -118,6 +121,8 @@ function toRow(user) {
     done_challenges: user.doneChallenges,
     challenge_date: user.challengeDate,
     challenge_categories: user.challengeCategories || [],
+    challenge_reflections: user.challengeReflections || [],
+    avatar_url: user.avatarUrl || null,
     case_index: user.caseIndex,
     done_missions: user.doneMissions,
     badges: user.badges,
@@ -200,6 +205,8 @@ function freshUser(name) {
     doneChallenges: [],
     challengeDate: {},
     challengeCategories: [],
+    challengeReflections: [],
+    avatarUrl: null,
     caseIndex: 0,
     doneMissions: [],
     badges: [],
@@ -213,6 +220,37 @@ function freshUser(name) {
   };
 }
 
+const fromChallengeRow = (r) => ({
+  id: r.id,
+  cat: r.kind,
+  kind: r.kind,
+  title: r.title,
+  desc: r.description || "",
+  source: r.source || "",
+  url: r.url || "",
+  steps: Array.isArray(r.steps) ? r.steps : [],
+  min: Number(r.minutes) || 5,
+  pts: Number(r.points) || 20,
+  dim: r.dim || "goal",
+  active: r.active !== false,
+  position: Number(r.position) || 0,
+  createdAt: r.created_at
+});
+
+const toChallengeRow = (b) => ({
+  kind: b.kind,
+  title: (b.title || "").trim(),
+  description: (b.desc || "").trim(),
+  source: (b.source || "").trim(),
+  url: (b.url || "").trim(),
+  steps: (b.steps || []).map((s) => String(s).trim()).filter(Boolean),
+  minutes: Number(b.minutes) || 5,
+  points: Number(b.points) || 20,
+  dim: b.dim || "goal",
+  active: b.active !== false,
+  position: Number(b.position) || 0
+});
+
 export const api = {
   health: async () => {
     try {
@@ -222,6 +260,22 @@ export const api = {
     } catch {
       return false;
     }
+  },
+
+  // Challenge aktif dari database. Kalau tabelnya belum ada, challenge bawaan
+  // tetap dipakai supaya halaman Daily Challenge tidak pernah kosong.
+  challenges: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c
+      .from("challenges")
+      .select("id, kind, title, description, source, url, steps, minutes, points, dim, active, position, created_at")
+      .eq("active", true)
+      .order("position", { ascending: true });
+    if (error) throw new ApiError(500, error.message);
+    const list = (data || []).map(fromChallengeRow);
+    setRemoteChallenges(list);
+    return list;
   },
 
   register: async ({ name, email, password }) => {
@@ -364,6 +418,33 @@ export const api = {
     const c = needClient();
     const au = await sessionUser();
     return assertNotBanned(await loadProfile(au.id));
+  },
+
+  // Foto profil diunggah ke bucket "avatars" dengan path <user_id>/<file>,
+  // lalu URL publiknya disimpan lewat RPC update_identity.
+  uploadAvatar: async (file) => {
+    const c = needClient();
+    const au = await sessionUser();
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${au.id}/${Date.now()}.${ext}`;
+    const { error } = await c.storage.from("avatars").upload(path, file, {
+      cacheControl: "3600",
+      upsert: false
+    });
+    if (error) throw new ApiError(500, error.message);
+    const { data } = c.storage.from("avatars").getPublicUrl(path);
+    return data.publicUrl;
+  },
+
+  updateIdentity: async ({ name, avatarUrl }) => {
+    const c = needClient();
+    const au = await sessionUser();
+    const { error } = await c.rpc("update_identity", {
+      p_name: name,
+      p_avatar_url: avatarUrl === undefined ? null : avatarUrl
+    });
+    if (error) throw new ApiError(400, error.message);
+    return { user: await loadProfile(au.id) };
   },
 
   patchUser: async (body) => {
@@ -518,16 +599,24 @@ export const api = {
     return { user };
   },
 
-  completeChallenge: async ({ challengeId, chips }) => {
+  completeChallenge: async ({ challengeId, kind, reflection }) => {
     const c = needClient();
     const au = await sessionUser();
     const current = await loadProfile(au.id);
     const today = todayKey();
     if (current.challengeDate[challengeId] === today) return { already: true, user: current };
-    const ch = CHALLENGES.find((x) => x.id === challengeId) || {};
+    const ch = challengeById(challengeId);
     const user = await mutateUser(au.id, (u) => {
-      if (chips && chips.length) {
-        u.challengeCategories = [...new Set([...(u.challengeCategories || []), ...chips])];
+      if (kind) {
+        u.challengeCategories = [...new Set([...(u.challengeCategories || []), kind])];
+      }
+      if (reflection) {
+        // Satu entri per challenge per tanggal, sama seperti mode demo.
+        // Kalau challenge yang sama diulang besok, refleksinya tetap terpisah.
+        const rest = (u.challengeReflections || []).filter(
+          (r) => !(r.id === challengeId && r.date === today)
+        );
+        u.challengeReflections = [...rest, { id: challengeId, date: today, text: reflection }];
       }
       u.challengeDate[challengeId] = today;
       if (!u.doneChallenges.includes(challengeId)) {
@@ -623,6 +712,56 @@ export const api = {
     if (error) throw new ApiError(500, error.message);
     if (!data) throw new ApiError(403, "Akses admin ditolak");
     return data;
+  },
+
+  adminOverview: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c.rpc("admin_overview");
+    if (error) throw new ApiError(500, error.message);
+    if (!data) throw new ApiError(403, "Akses admin ditolak");
+    return data;
+  },
+
+  adminChallenges: async () => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c
+      .from("challenges")
+      .select("id, kind, title, description, source, url, steps, minutes, points, dim, active, position, created_at")
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) throw new ApiError(500, error.message);
+    return (data || []).map(fromChallengeRow);
+  },
+
+  adminAddChallenge: async (body) => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c.from("challenges").insert(toChallengeRow(body)).select().single();
+    if (error) throw new ApiError(500, error.message);
+    return fromChallengeRow(data);
+  },
+
+  adminUpdateChallenge: async ({ id, ...body }) => {
+    const c = needClient();
+    await sessionUser();
+    const { data, error } = await c
+      .from("challenges")
+      .update(toChallengeRow(body))
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw new ApiError(500, error.message);
+    return fromChallengeRow(data);
+  },
+
+  adminDeleteChallenge: async ({ id }) => {
+    const c = needClient();
+    await sessionUser();
+    const { error } = await c.from("challenges").delete().eq("id", id);
+    if (error) throw new ApiError(500, error.message);
+    return { ok: true };
   },
 
   adminUsers: async () => {

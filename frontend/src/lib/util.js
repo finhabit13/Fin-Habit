@@ -71,3 +71,42 @@ export const challengeOfTheDay = (challenges) => {
   const idx = Math.max(0, dayOfYear()) % challenges.length;
   return challenges[idx];
 };
+
+/** Hash string 32-bit, supaya urutan pilihan challenge stabil untuk satu tanggal. */
+const hash = (s) => {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+};
+
+/**
+ * Tiga challenge untuk satu hari. Urutannya ditentukan tanggal, jadi semua
+ * orang yang membuka aplikasi di hari yang sama mendapat challenge yang sama.
+ * Satu challenge dari tiap jenis diambil lebih dulu supaya hari itu beragam.
+ * Urutan jenisnya diputar per tanggal, kalau tidak satu jenis tidak akan
+ * pernah muncul karena selalu kalah oleh tiga jenis lain.
+ */
+export const dailyChallenges = (challenges, count = 3, day = todayKey()) => {
+  if (!challenges || !challenges.length) return [];
+  const ranked = challenges
+    .map((c) => ({ c, k: hash(day + ":" + c.id) }))
+    .sort((a, b) => a.k - b.k);
+
+  const picked = [];
+  const kinds = [...new Set(challenges.map((c) => c.kind || "practice"))];
+  const off = hash("kinds:" + day) % kinds.length;
+  const order = kinds.slice(off).concat(kinds.slice(0, off));
+  for (const kind of order) {
+    if (picked.length >= count) break;
+    const next = ranked.find((x) => (x.c.kind || "practice") === kind && !picked.includes(x));
+    if (next) picked.push(next);
+  }
+  for (const x of ranked) {
+    if (picked.length >= count) break;
+    if (!picked.includes(x)) picked.push(x);
+  }
+  return picked.slice(0, count).map((x) => x.c);
+};

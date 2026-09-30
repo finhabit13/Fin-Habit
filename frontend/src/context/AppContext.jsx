@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import { api, ApiError, NetworkError, clearToken, hasToken, setToken } from "../lib/api";
+import { allChallenges } from "../lib/challenges";
 import { useI18n } from "../lib/i18n";
 import { store } from "../lib/store";
 
@@ -18,6 +19,7 @@ export function AppProvider({ children }) {
   const [success, setSuccess] = useState(null);
   const [modal, setModal] = useState(null);
   const [recovering, setRecovering] = useState(false);
+  const [challenges, setChallenges] = useState(() => allChallenges());
 
   const toastTimer = useRef(null);
   const successTimer = useRef(null);
@@ -45,6 +47,24 @@ export function AppProvider({ children }) {
   }, []);
 
   const isTab = NAV_TABS.includes(page);
+
+  /**
+   * Muat challenge aktif dari backend. Kalau gagal, challenge bawaan tetap
+   * dipakai supaya halaman Daily Challenge tidak pernah kosong.
+   */
+  const reloadChallenges = useCallback(async () => {
+    try {
+      await service.challenges();
+    } catch {
+      /* allChallenges() tetap mengembalikan challenge bawaan */
+    }
+    setChallenges(allChallenges());
+  }, [service]);
+
+  useEffect(() => {
+    if (!user && !demo) return;
+    reloadChallenges();
+  }, [demo, user?.id, reloadChallenges]);
 
   const enterDemo = useCallback(
     (msg) => {
@@ -310,6 +330,9 @@ export function AppProvider({ children }) {
   const value = {
     user,
     demo,
+    service,
+    challenges,
+    reloadChallenges,
     resolved,
     page,
     go,

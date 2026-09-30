@@ -114,6 +114,8 @@ body {
 .avatar {
   min-width: 44px;
   min-height: 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -121,10 +123,49 @@ body {
   color: #fff;
   font-weight: 700;
   font-size: 15px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 0;
   transition: transform 0.15s ease;
 }
 
 .avatar:hover {
+  transform: scale(1.05);
+}
+
+img.avatar {
+  object-fit: cover;
+  cursor: default;
+}
+
+.avatar-sm {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.avatar-lg {
+  width: 58px;
+  min-width: 58px;
+  height: 58px;
+  min-height: 58px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.avatar-btn {
+  display: block;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.avatar-btn:hover .avatar {
   transform: scale(1.05);
 }
 
@@ -688,6 +729,151 @@ select:focus-visible {
   color: #9cc2ff;
 }
 
+/* Badge jenis challenge, satu warna per jenis */
+.challenge-hero .tag.tag-video {
+  background: #1d4ed8;
+}
+
+.challenge-hero .tag.tag-read {
+  background: var(--green-deep);
+}
+
+.challenge-hero .tag.tag-quiz {
+  background: #6d28d9;
+}
+
+.challenge-hero .tag.tag-practice {
+  background: var(--amber-solid);
+}
+
+.challenge-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.challenge-source strong {
+  color: #fff;
+}
+
+.challenge-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.challenge-progress-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+
+.challenge-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: #4ade9f;
+  transition: width 0.25s ease;
+}
+
+.challenge-steps {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.challenge-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.challenge-step:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.challenge-step input {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: #4ade9f;
+}
+
+.challenge-step input:checked + span {
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: line-through;
+}
+
+.challenge-reflect {
+  display: block;
+  margin-top: 16px;
+}
+
+.challenge-reflect > span {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.challenge-reflect textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.challenge-reflect textarea::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Baris filter di luar hero, jadi pakai warna terang */
+.chip-row.filters {
+  margin-top: 20px;
+}
+
+.chip-row.filters .chip {
+  background: var(--white);
+  border-color: var(--line);
+  color: var(--navy);
+}
+
+.chip-row.filters .chip:hover {
+  background: var(--blue-soft);
+  border-color: var(--blue-line);
+}
+
+.chip-row.filters .chip.on {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -743,6 +929,72 @@ select:focus-visible {
 .mini-card > span:last-child {
   color: var(--muted);
   font-size: 18px;
+}
+
+.mini-card.is-current {
+  border-color: var(--blue-line);
+  box-shadow: inset 3px 0 0 var(--blue);
+}
+
+.day-strip {
+  margin: 12px 0 14px;
+}
+
+.day-pips {
+  display: flex;
+  gap: 6px;
+}
+
+.day-pip {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.day-pip.on {
+  background: var(--blue);
+}
+
+.challenge-today-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-today-list {
+  list-style: none;
+  margin: 4px 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home-today-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--blue-soft);
+}
+
+.home-today-list li.is-done {
+  opacity: 0.55;
+}
+
+.home-today-list li.is-done .home-today-title {
+  text-decoration: line-through;
+}
+
+.home-today-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+  line-height: 1.35;
+  min-width: 0;
 }
 
 .mini-title {
@@ -1615,6 +1867,29 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.photo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* .field span memberi warna teks label, jadi avatar di dalamnya harus dipaksa putih */
+.field .avatar {
+  color: #fff;
+}
+
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.photo-actions p {
+  flex-basis: 100%;
+  margin: 0;
 }
 
 .avatar-big {
@@ -2538,12 +2813,104 @@ select:focus-visible {
   letter-spacing: 0.5px;
 }
 
+.admin-nav {
+  display: flex;
+  gap: 6px;
+  padding: 12px 40px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.admin-nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.admin-nav-item:hover {
+  border-color: var(--blue-line);
+  color: var(--navy);
+}
+
+.admin-nav-item.is-active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+
+.admin-nav-item:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
 .admin-main {
   flex: 1;
   padding: 32px 40px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+.admin-challenge-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.admin-challenge-card.is-off {
+  opacity: 0.6;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.step-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.form-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--red-soft);
+  color: var(--red-deep);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .admin-nav {
+    padding: 12px 16px 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .admin-main {
+    padding: 20px 16px;
+  }
 }
 
 .admin-section {

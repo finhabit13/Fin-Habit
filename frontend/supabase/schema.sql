@@ -485,3 +485,324 @@ $$;
 
 revoke all on function public.admin_delete_banner(uuid) from public, anon;
 grant execute on function public.admin_delete_banner(uuid) to authenticated;
+
+-- ============================================================
+-- MIGRASI 6 - Reset Acak Poin Leaderboard (Sep 2026)
+-- JALANKAN DARI BARIS INI (sekali saja, di Supabase SQL Editor).
+-- Sebelum update quiz, ada user yang spam poin sehingga
+-- dominasi leaderboard tidak wajar. Blok ini mengacak poin
+-- semua user NON-ADMIN menjadi 0-49 agar papan peringkat
+-- kembali sehat. Akun admin tidak ikut diacak.
+-- ============================================================
+
+-- 1) Pratinjau (jalankan dulu, lihat siapa yang poinnya akan diacak):
+--    Hanya user dengan poin >= 50 yang diacak; yang < 50 dibiarkan.
+select id, name, role, points, streak
+from public.profiles
+where role <> 'admin'
+order by points desc;
+
+-- 2) Acak poin >= 50 menjadi 0-49. Yang sudah di bawah 50 tidak diubah.
+--    Jalankan dalam satu transaksi agar bisa dibatalkan:
+begin;
+
+update public.profiles
+set points = floor(random() * 50)::integer
+where role <> 'admin' and points >= 50;
+
+-- 3) Verifikasi (tidak boleh ada non-admin dengan poin >= 50):
+select id, name, role, points
+from public.profiles
+where role <> 'admin' and points >= 50
+order by points desc;
+
+-- 4) Kalau hasil sudah benar, ubah baris di bawah menjadi "commit;"
+--    lalu jalankan ulang. Kalau belum yakin, cukup jalankan "rollback;".
+commit;
+
+-- ============================================================
+-- (OPSIONAL) Bereskan data abnormal lain akibat spam.
+-- Jalankan hanya kalau angka-angka ini memang terlihat nggak wajar.
+-- ============================================================
+
+-- Clamp dimensi skill ke rentang wajar 0-100 (dipakai di Skor & rating).
+update public.profiles
+set dims = jsonb_build_object(
+  'saving',   least(greatest(coalesce((dims ->> 'saving')::integer, 0), 0), 100),
+  'spending', least(greatest(coalesce((dims ->> 'spending')::integer, 0), 0), 100),
+  'decision', least(greatest(coalesce((dims ->> 'decision')::integer, 0), 0), 100),
+  'goal',     least(greatest(coalesce((dims ->> 'goal')::integer, 0), 0), 100),
+  'risk',     least(greatest(coalesce((dims ->> 'risk')::integer, 0), 0), 100)
+)
+where role <> 'admin';
+
+-- Cegah streak absurd (maks. 1 tahun = 365). Bukan penghapusan data,
+-- hanya membatasi akun yang streak-nya tidak masuk akal.
+update public.profiles
+set streak = 365
+where role <> 'admin' and streak > 365;
+
+-- ============================================================
+-- MIGRASI 7 - Foto Profil, Nama, & Dashboard Admin Terpisah (Sep 2026)
+-- JALANKAN DARI BARIS INI (sekali saja, di Supabase SQL Editor).
+-- 1) Kolom avatar_url + RPC ganti nama/foto (user hanya boleh ubah 2 kolom ini).
+-- 2) Bucket storage "avatars" + policy agar user hanya bisa akses folder miliknya.
+-- 3) RPC admin_overview() untuk visual data di dashboard admin utama.
+-- ============================================================
+
+-- 1) Kolom foto profil & refleksi challenge ---------------------------------
+
+alter table public.profiles
+  add column if not exists avatar_url text;
+
+alter table public.profiles
+  add column if not exists challenge_reflections jsonb not null default '[]'::jsonb;
+
+-- Ganti nama & foto lewat RPC, bukan update langsung, supaya user tidak
+-- bisa menyunting kolom lain (poin, streak, dims) lewat RLS.
+-- p_name       : 1-40 karakter, wajib diisi.
+-- p_avatar_url  : null = jangan ubah foto, '' = hapus foto, selain itu URL publik.
+create or replace function public.update_identity(p_name text, p_avatar_url text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text;
+  v_avatar text;
+  v_new_name text;
+  v_new_avatar text;
+begin
+  v_name := nullif(btrim(p_name), '');
+  if v_name is null or char_length(v_name) > 40 then
+    raise exception 'Nama harus 1-40 karakter';
+  end if;
+
+  if p_avatar_url is not null and btrim(p_avatar_url) <> '' then
+    v_avatar := btrim(p_avatar_url);
+    if v_avatar !~ '^https://[a-z0-9.-]+/storage/v1/object/public/avatars/' then
+      raise exception 'URL foto tidak valid';
+    end if;
+  end if;
+
+  update public.profiles
+  set name = v_name,
+      avatar_url = case
+        when p_avatar_url is null then avatar_url
+        when btrim(p_avatar_url) = '' then null
+        else v_avatar
+      end
+  where id = auth.uid()
+  returning name, avatar_url into v_new_name, v_new_avatar;
+
+  if v_new_name is null then
+    raise exception 'Profil tidak ditemukan';
+  end if;
+
+  return jsonb_build_object('name', v_new_name, 'avatar_url', v_new_avatar);
+end;
+$$;
+
+revoke all on function public.update_identity(text, text) from public, anon;
+grant execute on function public.update_identity(text, text) to authenticated;
+
+-- Kolom baru harus ikut terbaca oleh RLS yang sudah ada (policies lama tetap berlaku).
+
+-- 2) Bucket foto profil --------------------------------------------------
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'avatars',
+  'avatars',
+  true,
+  2097152,
+  array['image/png', 'image/jpeg', 'image/webp']
+)
+on conflict (id) do update
+  set public = true,
+      file_size_limit = 2097152,
+      allowed_mime_types = array['image/png', 'image/jpeg', 'image/webp'];
+
+-- Nama file dipaksa berawalan <user_id>/ supaya user hanya bisa menyentuh foldernya.
+create or replace function public.avatar_owner()
+returns text
+language sql
+stable
+as $$
+  select auth.uid()::text;
+$$;
+
+drop policy if exists "avatars read" on storage.objects;
+create policy "avatars read" on storage.objects
+  for select using (bucket_id = 'avatars');
+
+drop policy if exists "avatars insert own" on storage.objects;
+create policy "avatars insert own" on storage.objects
+  for insert with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = public.avatar_owner());
+
+drop policy if exists "avatars update own" on storage.objects;
+create policy "avatars update own" on storage.objects
+  for update using (bucket_id = 'avatars' and (storage.foldername(name))[1] = public.avatar_owner());
+
+drop policy if exists "avatars delete own" on storage.objects;
+create policy "avatars delete own" on storage.objects
+  for delete using (bucket_id = 'avatars' and (storage.foldername(name))[1] = public.avatar_owner());
+
+-- 3) Ringkasan data untuk dashboard admin utama ---------------------------
+
+create or replace function public.admin_overview()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+declare
+  v jsonb;
+  v_score numeric;
+begin
+  if not public.is_admin() then
+    return null;
+  end if;
+
+  select jsonb_build_object(
+    'users', (select count(*) from public.profiles),
+    'users_student', (select count(*) from public.profiles where role <> 'admin'),
+    'admins', (select count(*) from public.profiles where role = 'admin'),
+    'banned', (select count(*) from public.profiles where banned),
+    'active_today', (select count(*) from public.profiles
+                     where last_active_day = to_char(current_date, 'YYYY-MM-DD')),
+    'active_7d', (select count(*) from public.profiles
+                  where last_active_day >= to_char(current_date - 6, 'YYYY-MM-DD')),
+    'active_30d', (select count(*) from public.profiles
+                   where last_active_day >= to_char(current_date - 29, 'YYYY-MM-DD')),
+    'new_7d', (select count(*) from public.profiles
+               where created_at >= now() - interval '7 days'),
+    'new_30d', (select count(*) from public.profiles
+                where created_at >= now() - interval '30 days'),
+    'avg_points', (select coalesce(round(avg(points)::numeric, 1), 0) from public.profiles),
+    'avg_streak', (select coalesce(round(avg(streak)::numeric, 1), 0) from public.profiles),
+    'avg_challenges', (select coalesce(round(avg(challenges_done)::numeric, 1), 0) from public.profiles),
+    'total_expenses', (select count(*) from public.expenses),
+    'total_spent', coalesce((select sum(amount) from public.expenses), 0),
+    'spent_7d', coalesce((select sum(amount) from public.expenses
+                          where date >= current_date - 6), 0),
+    'expenses_7d', (select count(*) from public.expenses
+                    where date >= current_date - 6),
+    'with_avatar', (select count(*) from public.profiles where avatar_url is not null),
+    'saving_total', coalesce((select sum(saving_current) from public.profiles), 0),
+    'saving_goal_total', coalesce((select sum(saving_goal) from public.profiles), 0),
+    'dim_avg', jsonb_build_object(
+      'saving',   (select coalesce(round(avg(coalesce((dims ->> 'saving')::numeric, 0)), 1), 0) from public.profiles),
+      'spending', (select coalesce(round(avg(coalesce((dims ->> 'spending')::numeric, 0)), 1), 0) from public.profiles),
+      'decision', (select coalesce(round(avg(coalesce((dims ->> 'decision')::numeric, 0)), 1), 0) from public.profiles),
+      'goal',     (select coalesce(round(avg(coalesce((dims ->> 'goal')::numeric, 0)), 1), 0) from public.profiles),
+      'risk',     (select coalesce(round(avg(coalesce((dims ->> 'risk')::numeric, 0)), 1), 0) from public.profiles)
+    ),
+    -- Sebaran skor habits: starter (<40), steady (40-69), smart (70-84), master (85+)
+    'score_bands', jsonb_build_object(
+      'starter', (select count(*) from public.profiles where (
+        (dims ->> 'saving')::integer + (dims ->> 'spending')::integer +
+        (dims ->> 'decision')::integer + (dims ->> 'goal')::integer +
+        (dims ->> 'risk')::integer) / 5 < 40),
+      'steady', (select count(*) from public.profiles where (
+        (dims ->> 'saving')::integer + (dims ->> 'spending')::integer +
+        (dims ->> 'decision')::integer + (dims ->> 'goal')::integer +
+        (dims ->> 'risk')::integer) / 5 between 40 and 69),
+      'smart', (select count(*) from public.profiles where (
+        (dims ->> 'saving')::integer + (dims ->> 'spending')::integer +
+        (dims ->> 'decision')::integer + (dims ->> 'goal')::integer +
+        (dims ->> 'risk')::integer) / 5 between 70 and 84),
+      'master', (select count(*) from public.profiles where (
+        (dims ->> 'saving')::integer + (dims ->> 'spending')::integer +
+        (dims ->> 'decision')::integer + (dims ->> 'goal')::integer +
+        (dims ->> 'risk')::integer) / 5 >= 85)
+    ),
+    -- Rata-rata skor gabungan; dipakai sebagai angka "literasi bagus"
+    'literacy_good', (select count(*) from public.profiles where (
+      (dims ->> 'saving')::integer + (dims ->> 'spending')::integer +
+      (dims ->> 'decision')::integer + (dims ->> 'goal')::integer +
+      (dims ->> 'risk')::integer) / 5 >= 70),
+    'avg_score', (select coalesce(round(avg(
+        (dims ->> 'saving')::integer + (dims ->> 'spending')::integer +
+        (dims ->> 'decision')::integer + (dims ->> 'goal')::integer +
+        (dims ->> 'risk')::integer)::numeric / 5, 1), 0) from public.profiles),
+    -- Sebar jumlah expense per hari selama 14 hari terakhir (grafik tren)
+    'daily_expenses', coalesce((
+      select jsonb_agg(jsonb_build_object('d', d::text, 'n', n::integer, 'total', total::numeric) order by d)
+      from (
+        select e.date as d, count(*) as n, sum(e.amount) as total
+        from public.expenses e
+        where e.date >= current_date - 13
+        group by e.date
+      ) s
+    ), '[]'::jsonb),
+    -- Papan 5 teratas + sebaran poin
+    'top_users', coalesce((
+      select jsonb_agg(jsonb_build_object('id', p.id, 'name', p.name, 'points', p.points,
+                                          'streak', p.streak, 'avatar_url', p.avatar_url) order by p.points desc)
+      from (select id, name, points, streak, avatar_url
+            from public.profiles where role <> 'admin'
+            order by points desc limit 5) p
+    ), '[]'::jsonb),
+    'points_bands', jsonb_build_object(
+      '0_99',    (select count(*) from public.profiles where points < 100),
+      '100_299', (select count(*) from public.profiles where points between 100 and 299),
+      '300_599', (select count(*) from public.profiles where points between 300 and 599),
+      '600_1199',(select count(*) from public.profiles where points between 600 and 1199),
+      '1200plus',(select count(*) from public.profiles where points >= 1200)
+    )
+  ) into v;
+
+  return v;
+end;
+$$;
+
+revoke all on function public.admin_overview() from public, anon;
+grant execute on function public.admin_overview() to authenticated;
+-- ============================================================
+-- MIGRASI 8 - CHALLENGE BUATAN ADMIN
+-- Challenge bawaan tetap ada di data.js. Yang ada di tabel ini
+-- adalah tambahan yang dibuat admin lewat dashboard.
+-- Kolom 'description' bukan 'desc' karena DESC keyword terpesan
+-- di Postgres dan akan merusak query PostgREST.
+-- ============================================================
+
+create table if not exists public.challenges (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null default 'practice'
+    check (kind in ('video', 'read', 'quiz', 'practice')),
+  title text not null check (char_length(trim(title)) between 3 and 120),
+  description text not null default '' check (char_length(description) <= 400),
+  source text not null default '' check (char_length(source) <= 80),
+  url text not null default '' check (url = '' or url ~ '^https://'),
+  steps jsonb not null default '[]'::jsonb
+    check (jsonb_typeof(steps) = 'array' and jsonb_array_length(steps) between 1 and 8),
+  minutes integer not null default 5 check (minutes between 1 and 240),
+  points integer not null default 20 check (points between 5 and 200),
+  dim text not null default 'goal'
+    check (dim in ('saving', 'spending', 'decision', 'goal', 'risk')),
+  active boolean not null default true,
+  position integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists challenges_active_idx
+  on public.challenges (active, position);
+
+alter table public.challenges enable row level security;
+
+-- Semua user login bisa membaca challenge yang aktif saja.
+create policy "challenges select authed" on public.challenges
+  for select using (auth.role() = 'authenticated' and active);
+
+-- Tulis hanya admin. Tiap policies-named supaya create ulang tidak konflik.
+create policy "challenges insert admin" on public.challenges
+  for insert with check (public.is_admin());
+
+create policy "challenges update admin" on public.challenges
+  for update using (public.is_admin()) with check (public.is_admin());
+
+create policy "challenges delete admin" on public.challenges
+  for delete using (public.is_admin());

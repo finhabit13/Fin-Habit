@@ -1,97 +1,156 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
-import { challengeOfTheDay, todayKey } from "../lib/util";
+import { dailyChallenges, todayKey } from "../lib/util";
+
+const REFLECTION_MIN = 15;
+const PER_DAY = 3;
 
 export default function Challenge() {
-  const { user, run, showSuccess, showToast } = useApp();
+  const { user, run, showSuccess, showToast, challenges } = useApp();
   const { t, content } = useI18n();
   const [currentId, setCurrentId] = useState(null);
-  const [chips, setChips] = useState([]);
+  const [done, setDone] = useState([]);
+  const [reflection, setReflection] = useState("");
 
-  if (!user) return null;
+  const day = todayKey();
+  const pool = challenges?.length ? challenges : content.CHALLENGES;
+  const todays = useMemo(() => dailyChallenges(pool, PER_DAY, day), [pool, day]);
+  const current = useMemo(
+    () => todays.find((c) => c.id === currentId) || todays[0],
+    [todays, currentId]
+  );
 
-  const defaultCh = challengeOfTheDay(content.CHALLENGES);
-  const current = content.CHALLENGES.find((c) => c.id === currentId) || defaultCh;
-  const doneToday = (user.challengeDate || {})[current.id] === todayKey();
+  if (!user || !current) return null;
+
+  const dateMap = user.challengeDate || {};
+  const doneToday = dateMap[current.id] === day;
+  const steps = current.steps || [];
+  const allTicked = steps.length > 0 && done.length === steps.length;
+  const reflectionOk = reflection.trim().length >= REFLECTION_MIN;
+  const canFinish = allTicked && reflectionOk;
+  const progress = steps.length ? Math.round((done.length / steps.length) * 100) : 0;
+  const finishedCount = todays.filter((c) => dateMap[c.id] === day).length;
 
   const pick = (id) => {
     setCurrentId(id);
-    setChips([]);
+    setDone([]);
+    setReflection("");
   };
 
-  const toggleChip = (name) =>
-    setChips((prev) => (prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]));
+  const toggleStep = (i) =>
+    setDone((prev) => (prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]));
 
   const complete = async () => {
     if (doneToday) return;
-    if (chips.length === 0) {
-      showToast(t("ch.minChips"));
+    if (!allTicked) {
+      showToast(t("ch.checkAll"));
       return;
     }
-    const res = await run((s) => s.completeChallenge({ challengeId: current.id, chips }));
+    if (!reflectionOk) {
+      showToast(t("ch.reflectionShort"));
+      return;
+    }
+    const res = await run((s) =>
+      s.completeChallenge({ challengeId: current.id, kind: current.kind, reflection: reflection.trim() })
+    );
     if (!res.ok) return;
     if (res.data.already) return;
-    setChips([]);
+    setDone([]);
+    setReflection("");
     showSuccess(t("ch.doneTitle"), "+" + current.pts + " " + t("common.points"));
   };
-
-  const shuffle = () => {
-    const pool = content.CHALLENGES.filter((c) => c.id !== current.id);
-    pick(pool[Math.floor(Math.random() * pool.length)].id);
-    showToast(t("ch.newPicked"));
-  };
-
-  const others = content.CHALLENGES.filter((c) => c.id !== current.id).slice(0, 5);
 
   return (
     <>
       <h1 className="page-title">{t("ch.title")}</h1>
       <p className="muted">{t("ch.sub")}</p>
 
-      <div className="card challenge-hero">
-        <span className="tag">{current.cat}</span>
-        <h2 className="challenge-hero-title">{current.title}</h2>
-        <p className="muted">{current.desc}</p>
-        <div className="chip-row">
-          {current.chips.map((name) => (
-            <button
-              key={name}
-              className={"chip" + (chips.includes(name) ? " on" : "")}
-              onClick={() => toggleChip(name)}
-            >
-              {name}
-            </button>
+      <div className="row-between day-strip">
+        <span className="small muted">{t("ch.todayCount", { done: finishedCount, total: todays.length })}</span>
+        <div className="day-pips" aria-hidden="true">
+          {todays.map((c) => (
+            <span key={c.id} className={"day-pip" + (dateMap[c.id] === day ? " on" : "")} />
           ))}
         </div>
-        <div className="row-between challenge-foot">
+      </div>
+
+      <div className="card challenge-hero">
+        <div className="row-between">
+          <span className={"tag tag-" + current.kind}>{t("ch.kind." + current.kind)}</span>
           <span className="muted small">
             {current.min} {t("common.minutes")} · +{current.pts} {t("common.points")}
           </span>
-          <button className="btn-ghost" onClick={shuffle}>
-            {t("ch.shuffle")}
-          </button>
         </div>
-        <button className="btn btn-primary" disabled={doneToday} onClick={complete}>
+
+        <h2 className="challenge-hero-title">{current.title}</h2>
+        <p className="muted">{current.desc}</p>
+
+        {current.url ? (
+          <div className="challenge-source">
+            <span className="muted small">
+              {t("ch.source")}: <strong>{current.source}</strong>
+            </span>
+            <a className="btn-ghost" href={current.url} target="_blank" rel="noreferrer noopener">
+              {t("ch.openSource")}
+            </a>
+          </div>
+        ) : (
+          <p className="muted small">{t("ch.inApp")}</p>
+        )}
+
+        <div className="challenge-progress">
+          <div className="challenge-progress-bar">
+            <span style={{ width: progress + "%" }} />
+          </div>
+          <span className="muted small">{t("ch.stepCount", { done: done.length, total: steps.length })}</span>
+        </div>
+
+        <ol className="challenge-steps">
+          {steps.map((step, i) => (
+            <li key={i}>
+              <label className="challenge-step">
+                <input type="checkbox" checked={done.includes(i)} onChange={() => toggleStep(i)} />
+                <span>{step}</span>
+              </label>
+            </li>
+          ))}
+        </ol>
+
+        <label className="challenge-reflect">
+          <span className="small">{t("ch.reflection")}</span>
+          <textarea
+            rows={3}
+            value={reflection}
+            placeholder={t("ch.reflectionHint")}
+            onChange={(e) => setReflection(e.target.value)}
+          />
+        </label>
+
+        <button className="btn btn-primary btn-block" disabled={doneToday || !canFinish} onClick={complete}>
           {doneToday ? t("ch.doneToday") : t("ch.doIt")}
         </button>
       </div>
 
-      <h3 className="section-title">{t("ch.other")}</h3>
-      <div className="grid-2">
-        {others.map((c) => {
-          const done = (user.challengeDate || {})[c.id] === todayKey();
+      <h3 className="section-title">{t("ch.todayList")}</h3>
+      <div className="challenge-today-list">
+        {todays.map((c) => {
+          const isDone = dateMap[c.id] === day;
           return (
-            <button key={c.id} className="mini-card" onClick={() => pick(c.id)}>
+            <button
+              key={c.id}
+              className={"mini-card" + (c.id === current.id ? " is-current" : "")}
+              onClick={() => pick(c.id)}
+              aria-current={c.id === current.id}
+            >
               <div>
                 <p className="mini-title">{c.title}</p>
                 <p className="mini-meta">
-                  {c.cat} · {c.min} {t("common.minutes")} · +{c.pts} {t("common.points")}
-                  {done ? t("ch.doneMark") : ""}
+                  {t("ch.kind." + c.kind)} · {c.min} {t("common.minutes")} · +{c.pts} {t("common.points")}
                 </p>
               </div>
-              <span aria-hidden="true">›</span>
+              {isDone ? <span className="tag admin">{t("ch.doneMark")}</span> : <span aria-hidden="true">›</span>}
             </button>
           );
         })}

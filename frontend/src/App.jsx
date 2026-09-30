@@ -9,7 +9,22 @@ import { LangProvider } from "./lib/i18n";
 import ForgotPassword from "./pages/ForgotPassword";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AdminDashboard from "./pages/AdminDashboard";
+import Activity from "./pages/admin/Activity";
+import AdminShell from "./pages/admin/AdminShell";
+import Banners from "./pages/admin/Banners";
+import Challenges from "./pages/admin/Challenges";
+import Leaderboard from "./pages/admin/Leaderboard";
+import Overview from "./pages/admin/Overview";
+import Users from "./pages/admin/Users";
+
+function adminPageFor(path) {
+  if (path.startsWith("/admin/users")) return <Users />;
+  if (path.startsWith("/admin/activity")) return <Activity />;
+  if (path.startsWith("/admin/leaderboard")) return <Leaderboard />;
+  if (path.startsWith("/admin/challenges")) return <Challenges />;
+  if (path.startsWith("/admin/banners")) return <Banners />;
+  return <Overview />;
+}
 
 function Root() {
   const { resolved, user, recovering, boot } = useApp();
@@ -49,9 +64,10 @@ function Root() {
   }
 
   if (isAdminPath) {
+    const page = adminPageFor(path);
     return (
       <>
-        <AdminDashboard />
+        <AdminShell>{page}</AdminShell>
         <Toast />
       </>
     );
