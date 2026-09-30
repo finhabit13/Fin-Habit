@@ -87,10 +87,12 @@ alter table public.profiles
 
 -- Papan skor publik: nama, poin, streak, badges semua pemain.
 -- View berjalan sebagai pemilik tabel sehingga RLS tidak membatasi.
+-- Kolom baru harus ditambahkan di akhir: create or replace view tidak
+-- boleh menyisipkan kolom di tengah.
 create or replace view public.leaderboard
 with (security_invoker = false)
 as
-  select id, name, points, streak, badges
+  select id, name, points, streak, badges, avatar_url, challenges_done
   from public.profiles
   where role <> 'admin'
   order by points desc;

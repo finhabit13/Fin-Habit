@@ -690,7 +690,7 @@ export const api = {
     const au = await sessionUser();
     const { data, error } = await c
       .from("leaderboard")
-      .select("id, name, points, streak, badges")
+      .select("id, name, points, streak, badges, avatar_url, challenges_done")
       .limit(100);
     if (error) throw new ApiError(500, error.message);
     return {
@@ -699,7 +699,9 @@ export const api = {
         name: r.name,
         points: Number(r.points),
         streak: Number(r.streak),
-        badges: r.badges || []
+        badges: r.badges || [],
+        avatarUrl: r.avatar_url || null,
+        challengesDone: Number(r.challenges_done) || 0
       })),
       meId: au.id
     };

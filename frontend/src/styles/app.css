@@ -2033,13 +2033,13 @@ select:focus-visible {
   white-space: nowrap;
 }
 
-/* Baris leaderboard admin: avatar lebih besar supaya profil user kelihatan. */
-.leader-row-admin {
+/* Baris leaderboard dengan profil: dipakai di leaderboard user dan admin. */
+.leader-row-full {
   padding: 14px 16px;
   gap: 14px;
 }
 
-.leader-row-admin .avatar {
+.leader-row-full .avatar {
   cursor: default;
   flex: none;
 }

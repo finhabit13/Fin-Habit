@@ -327,6 +327,7 @@ const UI_ID = {
   "lb.posTitle": "Posisimu",
   "lb.myPos": "Kamu berada di peringkat ke-{rank} dari {total} pemain.",
   "lb.streak": "streak {n}",
+  "lb.you": "Kamu",
   "lb.empty": "Belum ada pemain.",
   "lb.loading": "Memuat papan skor...",
 
@@ -778,6 +779,7 @@ const UI_EN = {
   "lb.posTitle": "Your position",
   "lb.myPos": "You are at rank #{rank} of {total} players.",
   "lb.streak": "streak {n}",
+  "lb.you": "You",
   "lb.empty": "No players yet.",
   "lb.loading": "Loading leaderboard...",
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import mascotUrl from "../assets/mascot.png";
+import Avatar from "../components/Avatar";
 import { useApp } from "../context/AppContext";
 import Glyph from "../lib/glyphs";
 import { useI18n } from "../lib/i18n";
@@ -42,12 +43,23 @@ export default function Leaderboard() {
         {rows.map((r, i) => {
           const isMe = r.id === meId;
           return (
-            <div key={r.id} className={"leader-row" + (isMe ? " is-me" : "")}>
+            <div key={r.id} className={"leader-row leader-row-full" + (isMe ? " is-me" : "")}>
               <span className={"leader-rank " + (MEDALS[i] || "")}>
                 {MEDALS[i] ? <Glyph name="medal" size={16} /> : i + 1}
               </span>
-              <span className="leader-name">{r.name}</span>
-              <span className="leader-pill">{t("lb.streak", { n: r.streak })}</span>
+              <Avatar user={r} size="md" />
+              <span className="leader-identity">
+                <span className="leader-name">
+                  {r.name}
+                  {isMe && <span className="tag">{t("lb.you")}</span>}
+                </span>
+                <span className="leader-sub">
+                  <span className="leader-pill">{t("lb.streak", { n: r.streak })}</span>
+                  <span className="muted small">
+                    {r.challengesDone || 0} {t("ad.challengesDoneShort")}
+                  </span>
+                </span>
+              </span>
               <b className="leader-pts">
                 {r.points} {t("common.points")}
               </b>

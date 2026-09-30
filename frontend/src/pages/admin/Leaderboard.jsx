@@ -44,7 +44,7 @@ export default function Leaderboard() {
         {board.length ? (
           <div className="leader-list">
             {board.map((b, i) => (
-              <div key={b.id} className={"leader-row leader-row-admin" + (b.banned ? " is-banned" : "")}>
+              <div key={b.id} className={"leader-row leader-row-full" + (b.banned ? " is-banned" : "")}>
                 <span className={"leader-rank " + (MEDALS[i] || "")}>
                   {MEDALS[i] ? <Glyph name="medal" size={16} /> : b.rank}
                 </span>
