@@ -809,3 +809,50 @@ create policy "challenges update admin" on public.challenges
 
 create policy "challenges delete admin" on public.challenges
   for delete using (public.is_admin());
+
+-- ============================================================
+-- MIGRASI 9 - Kunci Validasi Identitas Profil (Sep 2026)
+-- JALANKAN DARI BARIS INI.
+-- ============================================================
+
+-- update_identity() sudah memvalidasi nama dan URL foto, tapi column policy
+-- "profiles update own" juga mengizinkan update langsung ke tabel profiles.
+-- Artinya validasi itu bisa dilewati total: nama bisa ditulis dengan isinya
+-- seenaknya, dan avatar_url bisa diarahkan ke URL mana saja termasuk yang
+-- bukan bucket avatars.
+--
+-- Trigger ini memaksa aturan yang sama di semua jalur tulis, sehingga kolom
+-- name dan avatar_url tidak bisa dilewati begitu saja dengan update langsung.
+create or replace function public.guard_identity_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.is_admin() then
+    return new;
+  end if;
+
+  if new.name is distinct from old.name then
+    if new.name is null or btrim(new.name) = '' or char_length(new.name) > 40 then
+      raise exception 'Nama harus 1-40 karakter';
+    end if;
+  end if;
+
+  if new.avatar_url is distinct from old.avatar_url
+     and new.avatar_url is not null
+     and btrim(new.avatar_url) <> '' then
+    if new.avatar_url !~ '^https://[a-z0-9.-]+/storage/v1/object/public/avatars/' then
+      raise exception 'URL foto tidak valid';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_identity on public.profiles;
+create trigger profiles_guard_identity
+before update on public.profiles
+for each row execute function public.guard_identity_change();
