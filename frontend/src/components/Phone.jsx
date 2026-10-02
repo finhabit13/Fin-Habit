@@ -9,6 +9,7 @@ import Challenge from "../pages/Challenge";
 import Expenses from "../pages/Expenses";
 import Budget from "../pages/Budget";
 import Saving from "../pages/Saving";
+import SavingGoal from "../pages/SavingGoal";
 import Decision from "../pages/Decision";
 import Family from "../pages/Family";
 import Score from "../pages/Score";
@@ -23,6 +24,7 @@ const PAGES = {
   expenses: Expenses,
   budget: Budget,
   saving: Saving,
+  savingGoal: SavingGoal,
   decide: Decision,
   family: Family,
   score: Score,

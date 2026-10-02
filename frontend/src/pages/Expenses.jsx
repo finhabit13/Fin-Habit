@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import Meter from "../components/Meter";
+import AmountInput from "../components/AmountInput";
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
 import mascotUrl from "../assets/mascot.png";
 import { useI18n } from "../lib/i18n";
 import Glyph from "../lib/glyphs";
+import { parseThousands } from "../lib/money";
 import { budgetInfo, dayLabel, monthKey, rupiah, todayKey } from "../lib/util";
 
 export default function Expenses() {
@@ -36,7 +38,7 @@ export default function Expenses() {
 
   const submit = async (e) => {
     e.preventDefault();
-    const n = Number(amount);
+    const n = parseThousands(amount);
     if (!n || n <= 0) {
       showToast(t("ex.errAmount"));
       return;
@@ -96,14 +98,13 @@ export default function Expenses() {
 
         <form className="card" onSubmit={submit}>
           <h3 className="card-title">{t("ex.formTitle")}</h3>
-          <div className="exp-line">
-            <input
-              type="number"
+<div className="exp-line">
+            <AmountInput
               className="exp-amount"
-              placeholder="Rp"
-              min="0"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={setAmount}
+              placeholder="0"
+              ariaLabel={t("ex.formTitle")}
             />
             <select value={category} onChange={(e) => setCategory(e.target.value)}>
               {content.EXPENSE_CATEGORIES.map((c) => (

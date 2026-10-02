@@ -7,6 +7,8 @@
 import { CASES, DEFAULT_DATA, MISSIONS } from "./data";
 import { challengeById, setRemoteChallenges } from "./challenges";
 import { monthKey, todayKey, uid } from "./util";
+import { toAmount } from "./money";
+import { balanceOf } from "./savings";
 import { answerQuiz, applyReward, continueFree, dimOf, finishQuiz, shootForDay, startQuiz, unlockBadges } from "./rewards";
 
 const KEY = "finhabit_demo_v1";
@@ -58,22 +60,107 @@ function seedExpenses() {
   ];
 }
 
-let db = load();
+/**
+ * Data demo untuk tabungan. Dua goal supaya halaman Saving tidak terlihat
+ * kosong, dan goal pertama dibuat 6 hari lalu supaya ring "sisa hari" punya
+ * bahan untuk diukur. Saldo sengaja tidak disimpan: semuanya diturunkan dari
+ * daftar transaksi.
+ *
+ * Fungsi transaksi menerima daftar goal sebagai argumen, bukan membaca db.
+ * Saat load() berjalan, variabel db belum selesai diinisialisasi, jadi
+ * membacanya dari sini akan melempar ReferenceError.
+ */
+function seedSavingGoals() {
+  return [
+    {
+      id: uid(),
+      name: "Laptop baru",
+      targetAmount: 6000000,
+      cadenceAmount: 100000,
+      cadenceUnit: "day",
+      coverUrl: null,
+      createdAt: new Date(Date.now() - 6 * 86400000).toISOString()
+    },
+    {
+      id: uid(),
+      name: "Dana darurat",
+      targetAmount: 3000000,
+      cadenceAmount: 150000,
+      cadenceUnit: "week",
+      coverUrl: null,
+      createdAt: new Date(Date.now() - 2 * 86400000).toISOString()
+    }
+  ];
+}
+
+function seedSavingTransactions(goals) {
+  if (!Array.isArray(goals) || goals.length < 2) return [];
+  const hariLalu = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const buat = (goalId, kind, amount, note, hari) => ({
+    id: uid(),
+    goalId,
+    kind,
+    amount,
+    note,
+    occurredOn: hariLalu(hari),
+    createdAt: new Date(Date.now() - hari * 86400000).toISOString()
+  });
+  return [
+    buat(goals[0].id, "income", 100000, "", 6),
+    buat(goals[0].id, "income", 100000, "", 5),
+    buat(goals[0].id, "income", 100000, "", 4),
+    buat(goals[0].id, "income", 100000, "", 3),
+    buat(goals[0].id, "income", 100000, "", 2),
+    buat(goals[0].id, "income", 100000, "", 1),
+    buat(goals[0].id, "expense", 50000, "Beli tas", 1),
+    buat(goals[1].id, "income", 150000, "Mingguan", 2),
+    buat(goals[1].id, "income", 150000, "", 1)
+  ];
+}
 
 function load() {
   try {
     const saved = localStorage.getItem(KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      return { user: parsed.user, expenses: parsed.expenses, challenges: parsed.challenges || [] };
+      // Default wajib: localStorage sudah ada milik versi lama yang tidak punya
+      // key tabungan. Tanpa ini db.savingGoals undefined dan halaman Saving
+      // gagal tepat di demo yang paling sering dipakai.
+      if (parsed.savingGoals) {
+        return {
+          ...parsed,
+          savingTransactions: parsed.savingTransactions || seedSavingTransactions(parsed.savingGoals)
+        };
+      }
+      const goals = seedSavingGoals();
+      const migrated = {
+        ...parsed,
+        savingGoals: goals,
+        savingTransactions: seedSavingTransactions(goals)
+      };
+      persist(migrated);
+      return migrated;
     }
   } catch {
     /* abaikan */
   }
-  const fresh = { user: seed(), expenses: seedExpenses(), challenges: [] };
+  const goals = seedSavingGoals();
+  const fresh = {
+    user: seed(),
+    expenses: seedExpenses(),
+    challenges: [],
+    savingGoals: goals,
+    savingTransactions: seedSavingTransactions(goals)
+  };
   persist(fresh);
   return fresh;
 }
+
+let db = load();
 
 function persist(state = db) {
   try {
@@ -143,8 +230,15 @@ export const store = {
       spent_7d: spent,
       expenses_7d: db.expenses.length,
       with_avatar: u.avatarUrl ? 1 : 0,
-      saving_total: u.savingCurrent,
-      saving_goal_total: u.savingGoal,
+      // Dijumlahkan dari goal, bukan dari u.savingCurrent. Harus sama dengan
+      // admin_overview() di SQL, kalau tidak angka di demo dan di backend
+      // akan berbeda untuk input yang persis sama.
+      saving_total: db.savingGoals.reduce((s, g) => {
+        const txs = db.savingTransactions.filter((t) => t.goalId === g.id);
+        return s + balanceOf(txs);
+      }, 0),
+      saving_goal_total: db.savingGoals.reduce((s, g) => s + g.targetAmount, 0),
+      saving_goals: db.savingGoals.length,
       challenges: (db.challenges || []).length,
       dim_avg: { ...u.dims },
       score_bands: { starter: 0, steady: 0, smart: 0, master: 0 },
@@ -300,7 +394,7 @@ export const store = {
 
   async addExpense(body) {
     await delay();
-    const doc = { id: uid(), amount: Number(body.amount), category: body.category, note: body.note || "", date: body.date || todayKey() };
+    const doc = { id: uid(), amount: toAmount(body.amount), category: body.category, note: body.note || "", date: body.date || todayKey() };
     db.expenses.push(doc);
     shoot();
     grant(5, "spending", 1);
@@ -315,25 +409,90 @@ export const store = {
     return { ok: true, user: userView() };
   },
 
-  async saving() {
+  /**
+   * Tabungan goals. Bentuk responsnya sama dengan api.js supaya halaman
+   * Saving tidak tahu sedang berjalan di demo atau backend sungguhan.
+   * Saldo dihitung ulang dari transaksi, tidak disimpan terpisah, persis
+   * seperti di backend.
+   */
+  async savingGoals() {
     await delay();
-    return { goal: db.user.savingGoal, current: db.user.savingCurrent };
+    return db.savingGoals.map((g) => {
+      const transactions = db.savingTransactions.filter((t) => t.goalId === g.id);
+      return { ...clone(g), transactions: clone(transactions), balance: balanceOf(transactions) };
+    });
   },
 
-  async addSaving(amount) {
+  async createSavingGoal(input) {
     await delay();
-    const n = Number(amount);
-    if (db.user.savingGoal > 0) db.user.savingCurrent = Math.min(db.user.savingCurrent + n, db.user.savingGoal);
-    else db.user.savingCurrent += n;
-    grant(10, "saving", 1);
-    return { goal: db.user.savingGoal, current: db.user.savingCurrent, user: userView() };
+    const goal = {
+      id: uid(),
+      name: String(input.name || "").trim(),
+      targetAmount: toAmount(input.targetAmount),
+      cadenceAmount: Math.max(0, toAmount(input.cadenceAmount)),
+      cadenceUnit: input.cadenceUnit || "day",
+      coverUrl: input.coverUrl || null,
+      createdAt: new Date().toISOString()
+    };
+    if (!goal.name) throw new Error("Nama tujuan wajib diisi");
+    if (!goal.targetAmount || goal.targetAmount <= 0) throw new Error("Target harus lebih dari 0");
+    db.savingGoals.unshift(goal);
+    persist();
+    return clone(goal);
   },
 
-  async setTarget(target) {
+  async updateSavingGoal(goalId, patch) {
     await delay();
-    db.user.savingGoal = Number(target);
-    grant(5, "goal", 1);
-    return { goal: db.user.savingGoal, current: db.user.savingCurrent, user: userView() };
+    const g = db.savingGoals.find((x) => x.id === goalId);
+    if (!g) return null;
+    if (patch.name !== undefined) g.name = String(patch.name).trim();
+    if (patch.targetAmount !== undefined) g.targetAmount = toAmount(patch.targetAmount);
+    if (patch.cadenceAmount !== undefined) {
+      g.cadenceAmount = Math.max(0, toAmount(patch.cadenceAmount));
+    }
+    if (patch.cadenceUnit !== undefined) g.cadenceUnit = patch.cadenceUnit;
+    if (patch.coverUrl !== undefined) g.coverUrl = patch.coverUrl || null;
+    persist();
+    return clone(g);
+  },
+
+  async deleteSavingGoal(goalId) {
+    await delay();
+    db.savingGoals = db.savingGoals.filter((g) => g.id !== goalId);
+    db.savingTransactions = db.savingTransactions.filter((t) => t.goalId !== goalId);
+    persist();
+    return true;
+  },
+
+  async addSavingTx(input) {
+    await delay();
+    const amount = toAmount(input.amount);
+    if (!amount || amount <= 0) throw new Error("Nominal harus lebih dari 0");
+    const tx = {
+      id: uid(),
+      goalId: input.goalId,
+      kind: input.kind === "expense" ? "expense" : "income",
+      amount,
+      note: String(input.note || "").trim(),
+      occurredOn: input.occurredOn || todayKey(),
+      createdAt: new Date().toISOString()
+    };
+    db.savingTransactions.unshift(tx);
+    persist();
+    return clone(tx);
+  },
+
+  async deleteSavingTx(txId) {
+    await delay();
+    db.savingTransactions = db.savingTransactions.filter((t) => t.id !== txId);
+    persist();
+    return true;
+  },
+
+  // Demo tidak punya storage sungguhan, jadi tidak ada yang diunggah.
+  async uploadSavingCover() {
+    await delay();
+    return null;
   },
 
   async budget() {

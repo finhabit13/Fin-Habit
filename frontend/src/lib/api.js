@@ -5,6 +5,16 @@ import { createClient } from "@supabase/supabase-js";
 import { MISSIONS } from "./data";
 import { challengeById, setRemoteChallenges } from "./challenges";
 import { fromChallengeRow, toChallengeRow } from "./challengeRow";
+import { toAmount } from "./money";
+import {
+  addTransaction,
+  createGoal,
+  deleteGoal,
+  deleteTransaction,
+  loadGoalsWithBalance,
+  updateGoal,
+  uploadCover
+} from "./savingsApi";
 import {
   answerQuiz,
   applyReward,
@@ -468,7 +478,7 @@ export const api = {
   addExpense: async (body) => {
     const c = needClient();
     const au = await sessionUser();
-    const amount = Math.round(Number(body.amount) * 100) / 100;
+    const amount = Math.round(toAmount(body.amount) * 100) / 100;
     const doc = { user_id: au.id, amount, category: body.category, note: body.note || "", date: body.date || todayKey() };
     const { data, error } = await c.from("expenses").insert(doc).select().single();
     if (error) throw new ApiError(500, error.message);
@@ -493,34 +503,46 @@ export const api = {
     return { ok: true, user };
   },
 
-  saving: async () => {
+  savingGoals: async () => {
     const c = needClient();
     const au = await sessionUser();
-    const user = await loadProfile(au.id);
-    return { goal: user.savingGoal, current: user.savingCurrent };
+    return loadGoalsWithBalance(c, au.id);
   },
 
-  addSaving: async (amount) => {
+  createSavingGoal: async (input) => {
     const c = needClient();
     const au = await sessionUser();
-    const n = Number(amount);
-    const user = await mutateUser(au.id, (u) => {
-      if (u.savingGoal > 0) u.savingCurrent = Math.min(u.savingCurrent + n, u.savingGoal);
-      else u.savingCurrent += n;
-      applyReward(u, 10, "saving", 1);
-    });
-    return { goal: user.savingGoal, current: user.savingCurrent, user };
+    return createGoal(c, au.id, input);
   },
 
-  setTarget: async (target) => {
+  updateSavingGoal: async (goalId, patch) => {
     const c = needClient();
     const au = await sessionUser();
-    const n = Number(target);
-    const user = await mutateUser(au.id, (u) => {
-      u.savingGoal = n;
-      applyReward(u, 5, "goal", 1);
-    });
-    return { goal: user.savingGoal, current: user.savingCurrent, user };
+    return updateGoal(c, au.id, goalId, patch);
+  },
+
+  deleteSavingGoal: async (goalId) => {
+    const c = needClient();
+    const au = await sessionUser();
+    return deleteGoal(c, au.id, goalId);
+  },
+
+  addSavingTx: async (input) => {
+    const c = needClient();
+    const au = await sessionUser();
+    return addTransaction(c, au.id, input);
+  },
+
+  deleteSavingTx: async (txId) => {
+    const c = needClient();
+    const au = await sessionUser();
+    return deleteTransaction(c, au.id, txId);
+  },
+
+  uploadSavingCover: async (file) => {
+    const c = needClient();
+    const au = await sessionUser();
+    return uploadCover(c, au.id, file);
   },
 
   budget: async () => {

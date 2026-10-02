@@ -20,6 +20,9 @@ export function AppProvider({ children }) {
   const [modal, setModal] = useState(null);
   const [recovering, setRecovering] = useState(false);
   const [challenges, setChallenges] = useState(() => offerableChallenges());
+  // Goal tabungan yang sedang dibuka. Disimpan di context supaya halaman
+  // daftar bisa melompat ke detail lalu kembali tanpa memuat ulang daftar.
+  const [goalId, setGoalId] = useState(null);
 
   const toastTimer = useRef(null);
   const successTimer = useRef(null);
@@ -348,6 +351,15 @@ export function AppProvider({ children }) {
     showSuccess,
     openModal: (title, body) => setModal({ title, body }),
     closeModal: () => setModal(null),
+    goalId,
+    // Membuka goal selalu menyetel page-nya, supaya tombol "+" di daftar dan
+    // kartu di ringkasan tidak bisa masuk ke detail tanpa tujuan. Scroll
+    // ikut di-reset lewat go(), karena detail punya banner besar di atas:
+    // tanpa itu user mendarat di tengah halaman dan tidak melihat nama goal.
+    openGoal: (id) => {
+      setGoalId(id);
+      go(id ? "savingGoal" : "saving");
+    },
     run,
     boot,
     auth,

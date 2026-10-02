@@ -17,7 +17,7 @@ function prefersReducedMotion() {
  * Placeholder saat banner belum termuat.
  *
  * Sengaja memakai class `.banner-carousel` dan `.banner-dots` yang sama dengan
- * carousel asli, dan 正文-nya memakai aspect-ratio yang sama dengan
+ * carousel asli, dan isinya memakai aspect-ratio yang sama dengan
  * `.banner-item img`. Jadi tinggi kotaknya berasal dari aturan yang sama,
  * bukan angka yang disalin ulang; saat banner muncul, tinggi ini sudah pas
  * dan elemen di bawahnya tidak bergeser.

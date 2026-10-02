@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
 import Meter from "../components/Meter";
+import AmountInput from "../components/AmountInput";
 import BackLink from "../components/BackLink";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
+import { parseThousands } from "../lib/money";
 import { rupiah } from "../lib/util";
 
 const STATUS = ["safe", "warn", "over", "none"];
@@ -40,7 +42,7 @@ export default function Budget() {
   const pctWidth = Math.min(100, data.pct);
 
   const save = async () => {
-    const n = Number(input);
+    const n = parseThousands(input);
     if (!n || n <= 0) {
       showToast(t("bu.err"));
       return;
@@ -75,23 +77,24 @@ export default function Budget() {
           <p className="muted small">{t("bu." + status + "Hint")}</p>
         </div>
 
-        <div className="card">
+{/* Form, bukan div: satu field ini adalah satu-satunya aksi di kartu,
+            jadi Enter harusnya bisa menyimpan tanpa harus menebak letak tombol. */}
+        <form
+          className="card"
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+        >
           <h3 className="card-title">{t("bu.formTitle")}</h3>
           <label className="field">
             <span>{t("bu.fieldLabel")}</span>
-            <input
-              type="number"
-              value={input}
-              min="0"
-              step="10000"
-              placeholder={rupiah(data.budget || 0)}
-              onChange={(e) => setInput(e.target.value)}
-            />
+            <AmountInput value={input} onChange={setInput} placeholder={rupiah(data.budget || 0)} />
           </label>
-          <button className="btn btn-primary" onClick={save}>
+          <button type="submit" className="btn btn-primary">
             {t("bu.btnSave")}
           </button>
-        </div>
+        </form>
       </div>
 
       <div className="card soft-blue">
