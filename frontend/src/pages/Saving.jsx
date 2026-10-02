@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import BackLink from "../components/BackLink";
 import AmountInput from "../components/AmountInput";
+import GoalMenu from "../components/GoalMenu";
 import Meter from "../components/Meter";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
@@ -107,7 +108,7 @@ export function GoalForm({ initial, submitLabel, onSubmit, busy, onPickCover }) 
 }
 
 export default function Saving() {
-  const { run, openModal, closeModal, openGoal } = useApp();
+  const { run, openModal, closeModal, openGoal, showToast } = useApp();
   const { t } = useI18n();
   const [goals, setGoals] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -144,6 +145,56 @@ export default function Saving() {
     );
   };
 
+  const ubah = (goal) => {
+    openModal(
+      t("g.editTitle"),
+      <GoalForm
+        initial={goal}
+        submitLabel={t("g.save")}
+        busy={busy}
+        onSubmit={async (input) => {
+          setBusy(true);
+          const res = await run((s) => s.updateSavingGoal(goal.id, input));
+          setBusy(false);
+          if (!res.ok) return;
+          closeModal();
+          await load();
+        }}
+        onPickCover={async (file) => {
+          const up = await run((s) => s.uploadSavingCover(file));
+          return up.ok ? up.data : null;
+        }}
+      />
+    );
+  };
+
+  const hapus = (goal) => {
+    const jumlah = goal.transactions?.length ?? 0;
+    openModal(
+      t("g.deleteGoalTitle"),
+      <div className="stack">
+        <p className="muted">{t("g.deleteGoalBody", { name: goal.name, count: jumlah })}</p>
+        <div className="row-gap">
+          <button className="btn btn-outline" onClick={closeModal}>
+            {t("g.cancel")}
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={async () => {
+              const res = await run((s) => s.deleteSavingGoal(goal.id));
+              if (!res.ok) return;
+              closeModal();
+              await load();
+              showToast(t("g.goalDeleted"));
+            }}
+          >
+            {t("g.deleteConfirm")}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <BackLink label={t("nav.home")} />
@@ -170,14 +221,26 @@ export default function Saving() {
               di bawah. Kalau semua goal dirender di daftar pertama lalu
               slice(1) dirender lagi, goal kedua ke-n akan muncul dua kali. */}
           <div className="goal-list goal-list-featured">
-            <GoalCard goal={goals[0]} onOpen={() => openGoal(goals[0].id)} featured />
+            <GoalCard
+              goal={goals[0]}
+              featured
+              onOpen={() => openGoal(goals[0].id)}
+              onEdit={() => ubah(goals[0])}
+              onDelete={() => hapus(goals[0])}
+            />
           </div>
           {goals.length > 1 && (
             <>
               <h3 className="section-title">{t("g.others")}</h3>
               <div className="goal-list">
                 {goals.slice(1).map((g) => (
-                  <GoalCard key={g.id} goal={g} onOpen={() => openGoal(g.id)} />
+                  <GoalCard
+                    key={g.id}
+                    goal={g}
+                    onOpen={() => openGoal(g.id)}
+                    onEdit={() => ubah(g)}
+                    onDelete={() => hapus(g)}
+                  />
                 ))}
               </div>
             </>
@@ -188,39 +251,47 @@ export default function Saving() {
   );
 }
 
-function GoalCard({ goal, onOpen, featured }) {
+function GoalCard({ goal, onOpen, onEdit, onDelete, featured }) {
   const { t } = useI18n();
   const pct = savedPercent(goal.targetAmount, goal.balance);
   const sisa = daysLeft(goal.targetAmount, goal.balance, goal.cadenceAmount, goal.cadenceUnit);
 
   return (
-    <button className={featured ? "goal-card is-featured" : "goal-card"} onClick={onOpen}>
-      <div className="goal-card-cover">
-        {goal.coverUrl ? (
-          <img src={goal.coverUrl} alt="" />
-        ) : (
-          <span className="goal-card-cover-empty" aria-hidden="true">
-            {goal.name.slice(0, 1).toUpperCase()}
-          </span>
-        )}
-      </div>
-      <div className="goal-card-body">
-        <p className="goal-card-name">{goal.name}</p>
-        <p className="goal-card-amount">
-          {rupiah(goal.balance)}
-          <span className="muted"> / {rupiah(goal.targetAmount)}</span>
-        </p>
-        <div className="bar">
-          <Meter value={pct} tone={pct >= 100 ? "green" : "amber"} />
+    /* Kartu ini <div>, bukan <button>: isinya sudah memuat dua tombol (buka
+       dan menu tiga titik) dan HTML tidak boleh menitipkan <button> di dalam
+       <button>. Area yang diklik tetap satu tombol penuh di goal-card-open, jadi
+       perlakuannya sama seperti sebelumnya bagi mouse maupun keyboard. */
+    <div className={featured ? "goal-card is-featured" : "goal-card"}>
+      <button className="goal-card-open" onClick={onOpen}>
+        <div className="goal-card-cover">
+          {goal.coverUrl ? (
+            <img src={goal.coverUrl} alt="" />
+          ) : (
+            <span className="goal-card-cover-empty" aria-hidden="true">
+              {goal.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
         </div>
-        <p className="muted small">
-          {pct >= 100
-            ? t("g.reached")
-            : sisa === null
-              ? t("g.noPlan")
-              : t("g.daysLeft", { days: sisa })}
-        </p>
-      </div>
-    </button>
+        <div className="goal-card-body">
+          <p className="goal-card-name">{goal.name}</p>
+          <p className="goal-card-amount">
+            {rupiah(goal.balance)}
+            <span className="muted"> / {rupiah(goal.targetAmount)}</span>
+          </p>
+          <div className="bar">
+            <Meter value={pct} tone={pct >= 100 ? "green" : "amber"} />
+          </div>
+          <p className="muted small">
+            {pct >= 100
+              ? t("g.reached")
+              : sisa === null
+                ? t("g.noPlan")
+                : t("g.daysLeft", { days: sisa })}
+          </p>
+        </div>
+      </button>
+
+      <GoalMenu goalName={goal.name} onEdit={onEdit} onDelete={onDelete} />
+    </div>
   );
 }

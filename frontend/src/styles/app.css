@@ -3750,23 +3750,36 @@ select:focus-visible {
   margin-bottom: 18px;
 }
 
-/* Kartu dibuat dari <button> supaya bisa diklik dan bisa difokus dengan
-   keyboard tanpa perlu tabindex dan onKeyDown manual. Semua gaya tombol
+/* Kartu adalah <div> pembungkus, bukan <button>: isinya memuat tombol buka
+   dan tombol menu tiga titik, dan HTML tidak boleh menitipkan <button> di
+   dalam <button>.overflow dibiarkan terbuka supaya dropdown menu tidak
+   terpotong; sudut-rounded cover dipindah ke .goal-card-cover. */
+.goal-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  background: var(--card, #fff);
+  border: 1px solid var(--line, rgba(15, 23, 42, 0.08));
+  border-radius: 16px;
+  color: inherit;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+/* Area klik utama. Tombol penuh di dalam kartu supaya tetap bisa difokus
+   dengan keyboard tanpa perlu tabindex dan onKeyDown manual. Gaya tombol
    bawaan dibuang dulu, termasuk outline, lalu focus-visible dikembalikan
    sendiri supaya tetap ada penanda fokus untuk pengguna keyboard. */
-.goal-card {
+.goal-card-open {
   display: block;
   width: 100%;
   padding: 0;
   text-align: left;
-  background: var(--card, #fff);
-  border: 1px solid var(--line, rgba(15, 23, 42, 0.08));
+  background: none;
+  border: 0;
   border-radius: 16px;
-  overflow: hidden;
   cursor: pointer;
   font: inherit;
   color: inherit;
-  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .goal-card:hover {
@@ -3774,16 +3787,104 @@ select:focus-visible {
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
-.goal-card:focus-visible {
+.goal-card-open:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+/* Pemicu menu tiga titik. Position absolute supaya tidak menambah tinggi
+   kartu dan tidak ikut membuat kartu bergeser saat kebuka. */
+.goal-menu-wrap {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+}
+
+.goal-menu-trigger {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.goal-menu-trigger:hover {
+  background: #fff;
+}
+
+.goal-menu-trigger:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
+}
+
+/* Dropdown. z-index di atas kartu berikutnya supaya tidak tertutup kartu
+   yang lebih rendah di daftar. */
+.goal-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 186px;
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid var(--line, rgba(15, 23, 42, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+  z-index: 4;
+}
+
+.goal-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  /* nowrap + min-width di atas: tanpa ini "Hapus tabungan" terlipat dua
+     baris di layar sempit dan tinggi item jadi tidak seragam. */
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.goal-menu-item:hover,
+.goal-menu-item:focus-visible {
+  background: var(--blue-soft, #eef4ff);
+  outline: none;
+}
+
+.goal-menu-item.is-danger {
+  color: #b42318;
+}
+
+.goal-menu-item.is-danger:hover,
+.goal-menu-item.is-danger:focus-visible {
+  background: #fee4e2;
 }
 
 /* Cover kartu daftar sengaja pendek (band, bukan poster). Di lebar
    desktop kartu ini bisa 880px, dan aspect-ratio 16/7 di situ bikin satu
    kartu eats 500px tinggi sehingga daftar goal jadi satu kolom panjang. */
+/* Sudut-rounded pindah ke sini karena .goal-card tidak lagi memakai
+   overflow:hidden (dropdown menunya akan terpotong). */
 .goal-card-cover {
   height: 96px;
+  border-radius: 15px 15px 0 0;
   background: linear-gradient(135deg, var(--green-soft), var(--blue-soft));
   display: grid;
   place-items: center;

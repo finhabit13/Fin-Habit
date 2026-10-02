@@ -8,7 +8,6 @@ import { useI18n } from "../lib/i18n";
 import { parseThousands } from "../lib/money";
 import { summarize } from "../lib/savings";
 import { rupiah } from "../lib/util";
-import { GoalForm } from "./Saving";
 
 const PACE_TONE = { ahead: "green", onTrack: "amber", late: "red", done: "green", unknown: "muted" };
 const PACE_LABEL = {
@@ -64,26 +63,6 @@ export default function SavingGoal() {
           closeModal();
           await load();
           showSuccess(t("g.txSaved"), rupiah(input.amount));
-        }}
-      />
-    );
-  };
-
-  // --- ubah goal
-  const ubah = () => {
-    openModal(
-      t("g.editTitle"),
-      <GoalForm
-        initial={goal}
-        submitLabel={t("g.save")}
-        busy={busy}
-        onSubmit={async (input) => {
-          setBusy(true);
-          const res = await run((svc) => svc.updateSavingGoal(goal.id, input));
-          setBusy(false);
-          if (!res.ok) return;
-          closeModal();
-          await load();
         }}
       />
     );
@@ -145,9 +124,6 @@ export default function SavingGoal() {
             {uploading ? t("g.uploading") : t("g.changePhoto")}
             <input type="file" accept="image/*" onChange={gantiGambar} hidden />
           </label>
-          <button className="btn btn-outline small-btn" onClick={ubah}>
-            {t("g.edit")}
-          </button>
         </div>
       </div>
 
