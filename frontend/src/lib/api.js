@@ -4,6 +4,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { MISSIONS } from "./data";
 import { challengeById, setRemoteChallenges } from "./challenges";
+import { fromChallengeRow, toChallengeRow } from "./challengeRow";
 import {
   answerQuiz,
   applyReward,
@@ -219,37 +220,6 @@ function freshUser(name) {
     banned: false
   };
 }
-
-const fromChallengeRow = (r) => ({
-  id: r.id,
-  cat: r.kind,
-  kind: r.kind,
-  title: r.title,
-  desc: r.description || "",
-  source: r.source || "",
-  url: r.url || "",
-  steps: Array.isArray(r.steps) ? r.steps : [],
-  min: Number(r.minutes) || 5,
-  pts: Number(r.points) || 20,
-  dim: r.dim || "goal",
-  active: r.active !== false,
-  position: Number(r.position) || 0,
-  createdAt: r.created_at
-});
-
-const toChallengeRow = (b) => ({
-  kind: b.kind,
-  title: (b.title || "").trim(),
-  description: (b.desc || "").trim(),
-  source: (b.source || "").trim(),
-  url: (b.url || "").trim(),
-  steps: (b.steps || []).map((s) => String(s).trim()).filter(Boolean),
-  minutes: Number(b.minutes) || 5,
-  points: Number(b.points) || 20,
-  dim: b.dim || "goal",
-  active: b.active !== false,
-  position: Number(b.position) || 0
-});
 
 export const api = {
   health: async () => {

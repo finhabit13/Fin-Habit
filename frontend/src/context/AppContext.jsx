@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import { api, ApiError, NetworkError, clearToken, hasToken, setToken } from "../lib/api";
-import { allChallenges } from "../lib/challenges";
+import { offerableChallenges } from "../lib/challenges";
 import { useI18n } from "../lib/i18n";
 import { store } from "../lib/store";
 
@@ -19,7 +19,7 @@ export function AppProvider({ children }) {
   const [success, setSuccess] = useState(null);
   const [modal, setModal] = useState(null);
   const [recovering, setRecovering] = useState(false);
-  const [challenges, setChallenges] = useState(() => allChallenges());
+  const [challenges, setChallenges] = useState(() => offerableChallenges());
 
   const toastTimer = useRef(null);
   const successTimer = useRef(null);
@@ -58,7 +58,10 @@ export function AppProvider({ children }) {
     } catch {
       /* allChallenges() tetap mengembalikan challenge bawaan */
     }
-    setChallenges(allChallenges());
+    // Yang dimasukkan ke state adalah challenge yang masih aktif, supaya
+    // challenge yang sudah dimatikan admin tidak muncul sebagai pilihan
+    // harian. Pencarian by id tetap memakai allChallenges() yang lengkap.
+    setChallenges(offerableChallenges());
   }, [service]);
 
   useEffect(() => {

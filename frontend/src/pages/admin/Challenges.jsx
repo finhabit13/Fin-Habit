@@ -98,7 +98,10 @@ export default function Challenges() {
   };
 
   const toggleActive = async (c) => {
-    const res = await run((s) => s.adminUpdateChallenge({ ...c, active: !c.active, steps: c.steps || [] }));
+    // Hanya kirim active. Dulu objek challenge utuh diteruskan, dan karena
+    // bentuknya beda dengan bentuk form, minutes dan points ikut ditulis ulang
+    // jadi nilai default 5/20 setiap kali challenge dinyalakan atau dimatikan.
+    const res = await run((s) => s.adminUpdateChallenge({ id: c.id, active: !c.active }));
     if (res.ok) {
       await load();
       await reloadChallenges();
