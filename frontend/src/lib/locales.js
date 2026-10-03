@@ -328,6 +328,10 @@ const UI_ID = {
   "fa.doneLabel": "Misi selesai ✓",
   "fa.complete": "Complete Mission",
   "fa.success": "Misi keluarga selesai!",
+  "fa.today": "Misi hari ini",
+  "fa.todayDone": "selesai hari ini",
+  "fa.allDone": "Semua misi hari ini selesai. Besok dapat undian baru.",
+  "fa.todayGone": "Misi itu sudah tidak diundi hari ini.",
 
   "pf.title": "Profil",
   "pf.editIdentity": "Nama & foto",
@@ -815,6 +819,10 @@ const UI_EN = {
   "fa.doneLabel": "Mission done ✓",
   "fa.complete": "Complete Mission",
   "fa.success": "Family mission complete!",
+  "fa.today": "Today missions",
+  "fa.todayDone": "done today",
+  "fa.allDone": "All of today's missions done. New draw tomorrow.",
+  "fa.todayGone": "That mission is not in today draw.",
 
   "pf.title": "Profile",
   "pf.editIdentity": "Name & photo",
@@ -2013,13 +2021,31 @@ const CASES_EN = [
 const MISSIONS_ID = [
   { id: "m1", icon: "bag", title: "Family Shopping Challenge", desc: "Susun daftar belanja mingguan bersama orang tua dan tetap di dalam budget.", budget: "Rp100.000", time: "1 hari", reward: "Budget Keeper · +40 poin", pts: 40, dim: "spending" },
   { id: "m2", icon: "soup", title: "Bekal Seminggu", desc: "Bandingkan biaya jajan di sekolah dengan membawa bekal selama 5 hari.", budget: "Rp75.000", time: "5 hari", reward: "Meal Planner · +50 poin", pts: 50, dim: "saving" },
-  { id: "m3", icon: "bulb", title: "Hemat Listrik Keluarga", desc: "Catat pemakaian listrik dan cari 3 kebiasaan yang bisa dihemat bulan ini.", budget: "Bebas", time: "7 hari", reward: "Energy Saver · +45 poin", pts: 45, dim: "goal" }
+  { id: "m3", icon: "bulb", title: "Hemat Listrik Keluarga", desc: "Catat pemakaian listrik dan cari 3 kebiasaan yang bisa dihemat bulan ini.", budget: "Bebas", time: "7 hari", reward: "Energy Saver · +45 poin", pts: 45, dim: "goal" },
+  { id: "m4", icon: "utensils", title: "Atur Makan Keluarga", desc: "Buat daftar menu makan seminggu dan tandai pengeluaran yang tidak tercatat.", budget: "Rp300.000", time: "7 hari", reward: "Meal Budgeter · +35 poin", pts: 35, dim: "spending" },
+  { id: "m5", icon: "clipboard", title: "Susun Menu Mingguan", desc: "Tentukan menu sekali seminggu dengan batas belanja yang sudah disepakati.", budget: "Rp250.000", time: "1 minggu", reward: "Menu Planner · +40 poin", pts: 40, dim: "spending" },
+  { id: "m6", icon: "cart", title: "Jajan Tanpa Menyesal", desc: "Bandingkan harga di toko lain sebelum membeli, lalu catat selisihnya.", budget: "Bebas", time: "1 hari", reward: "Smart Shopper · +45 poin", pts: 45, dim: "decision" },
+  { id: "m7", icon: "piggy", title: "Target Tabungan Bersama", desc: "Pilih satu target kecil dan taburkan bersama sampai targetnya tercapai.", budget: "Bebas", time: "30 hari", reward: "Shared Target · +50 poin", pts: 50, dim: "saving" },
+  { id: "m8", icon: "receipt", title: "Cek Tagihan Bersama", desc: "Lihat semua tagihan keluarga, tandai yang bisa dihemat, lalu bahas hasilnya.", budget: "Bebas", time: "2 hari", reward: "Bill Checker · +35 poin", pts: 35, dim: "goal" },
+  { id: "m9", icon: "scale", title: "Tanya Dulu Sebelum Beli", desc: "Tanyakan dulu ke diri sendiri: barang ini perlu atau hanya tergoda?", budget: "Bebas", time: "7 hari", reward: "Careful Buyer · +40 poin", pts: 40, dim: "decision" },
+  { id: "m10", icon: "chart", title: "Bandingkan Harga", desc: "Bandingkan harga tiga barang yang sama di toko berbeda dan laporkan yang termurah.", budget: "Bebas", time: "1 hari", reward: "Price Scout · +45 poin", pts: 45, dim: "decision" },
+  { id: "m11", icon: "shield", title: "Simpan Bukti Belanja", desc: "Kumpulkan struk belanja dan cek ulang mutasi rekening bersama.", budget: "Bebas", time: "7 hari", reward: "Receipt Keeper · +35 poin", pts: 35, dim: "risk" },
+  { id: "m12", icon: "sliders", title: "Batas Jajan Mingguan", desc: "Tetapkan batas jajan mingguan, lalu catat setiap pengeluaran jajan.", budget: "Bebas", time: "7 hari", reward: "Limit Setter · +40 poin", pts: 40, dim: "risk" }
 ];
 
 const MISSIONS_EN = [
   { id: "m1", icon: "bag", title: "Family Shopping Challenge", desc: "Plan a weekly grocery list with your parents and stay within budget.", budget: "Rp100.000", time: "1 day", reward: "Budget Keeper · +40 points", pts: 40, dim: "spending" },
   { id: "m2", icon: "soup", title: "A Week of Packed Lunch", desc: "Compare school snack costs against packing lunch for 5 days.", budget: "Rp75.000", time: "5 days", reward: "Meal Planner · +50 points", pts: 50, dim: "saving" },
-  { id: "m3", icon: "bulb", title: "Family Electricity Savings", desc: "Track electricity use and find 3 habits to cut this month.", budget: "Free", time: "7 days", reward: "Energy Saver · +45 points", pts: 45, dim: "goal" }
+  { id: "m3", icon: "bulb", title: "Family Electricity Savings", desc: "Track electricity use and find 3 habits to cut this month.", budget: "Free", time: "7 days", reward: "Energy Saver · +45 points", pts: 45, dim: "goal" },
+  { id: "m4", icon: "utensils", title: "Plan Family Meals", desc: "Write a week of meal ideas and mark the spending nobody tracked.", budget: "Rp300.000", time: "7 days", reward: "Meal Budgeter · +35 points", pts: 35, dim: "spending" },
+  { id: "m5", icon: "clipboard", title: "Agree on the Week's Menu", desc: "Settle the menu for the week against a spending limit you agree on.", budget: "Rp250.000", time: "1 week", reward: "Menu Planner · +40 points", pts: 40, dim: "spending" },
+  { id: "m6", icon: "cart", title: "Snack Without Regret", desc: "Check the price elsewhere before buying, then write down the difference.", budget: "Free", time: "1 day", reward: "Smart Shopper · +45 points", pts: 45, dim: "decision" },
+  { id: "m7", icon: "piggy", title: "A Shared Saving Target", desc: "Pick one small target and save towards it together until you reach it.", budget: "Free", time: "30 days", reward: "Shared Target · +50 points", pts: 50, dim: "saving" },
+  { id: "m8", icon: "receipt", title: "Review the Bills Together", desc: "Go through the family bills, mark what can be cut, then discuss it.", budget: "Free", time: "2 days", reward: "Bill Checker · +35 points", pts: 35, dim: "goal" },
+  { id: "m9", icon: "scale", title: "Ask Before Buying", desc: "Ask yourself first whether you need it or you only want it.", budget: "Free", time: "7 days", reward: "Careful Buyer · +40 points", pts: 40, dim: "decision" },
+  { id: "m10", icon: "chart", title: "Compare Prices", desc: "Compare the same three items across shops and report the cheapest one.", budget: "Free", time: "1 day", reward: "Price Scout · +45 points", pts: 45, dim: "decision" },
+  { id: "m11", icon: "shield", title: "Keep the Receipts", desc: "Collect the shopping receipts and recheck the bank account together.", budget: "Free", time: "7 days", reward: "Receipt Keeper · +35 points", pts: 35, dim: "risk" },
+  { id: "m12", icon: "sliders", title: "Set a Weekly Snack Limit", desc: "Set a weekly snack budget, then log every snack spend.", budget: "Free", time: "7 days", reward: "Limit Setter · +40 points", pts: 40, dim: "risk" }
 ];
 
 const BADGES_ID = [

@@ -19,6 +19,7 @@ create table public.profiles (
   challenge_categories jsonb not null default '[]',
   case_index integer not null default 0,
   done_missions jsonb not null default '[]',
+  mission_log jsonb not null default '{}',
   badges jsonb not null default '[]',
   saving_goal numeric not null default 300000,
   saving_current numeric not null default 0,

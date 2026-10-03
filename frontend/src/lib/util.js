@@ -108,5 +108,63 @@ export const dailyChallenges = (challenges, count = 3, day = todayKey()) => {
     if (picked.length >= count) break;
     if (!picked.includes(x)) picked.push(x);
   }
+  // Pengisi kalau jumlah dimensi lebih sedikit dari jumlah misi yang
+  // diminta, misalnya pool cuma satu dimensi.
+  for (const x of ranked) {
+    if (picked.length >= count) break;
+    if (!picked.includes(x)) picked.push(x);
+  }
+
   return picked.slice(0, count).map((x) => x.c);
+};
+
+/**
+ * Dua misi keluarga untuk satu hari, diacak tapi stabil per tanggal.
+ *
+ * Semuanya ditentukan tanggal, jadi semua orang yang membuka aplikasi di
+ * hari yang sama mendapat misi yang sama, dan refresh di tengah hari tidak
+ * mengubah undian.
+ *
+ * Undiannya dua lapis. Misi diurutkan lebih dulu, lalu diambil satu per
+ * dimensi supaya dua misi yang muncul tidak berdimensi sama, misalnya dua
+ * misi belanja sekaligus.
+ *
+ * Urutan dimensi ikut diurutkan ulang per tanggal, bukan cuma diputar di
+ * posisi yang sama. Kalau hanya diputar, pasangan dimensinya mengulang
+ * setiap lima hari dan pola mingguan-nya jadi mudah ditebak.
+ *
+ * Tidak ada bacaan database di sini. Undian murni fungsi dari tanggal, jadi
+ * tidak perlu disimpan dan tidak bisa berbeda antar perangkat. Yang perlu
+ * disimpan hanya misi yang sudah dikerjakan.
+ */
+export const dailyMissions = (missions, count = 2, day = todayKey()) => {
+  if (!missions || !missions.length) return [];
+  const ranked = missions
+    .map((m) => ({ m, k: hash("mission:" + day + ":" + m.id) }))
+    .sort((a, b) => a.k - b.k);
+
+  const picked = [];
+  const dims = [...new Set(missions.map((m) => m.dim || "goal"))];
+  const urutDim = dims
+    .map((d) => ({ d, k: hash("missiondim:" + day + ":" + d) }))
+    .sort((a, b) => a.k - b.k)
+    .map((x) => x.d);
+  const off = hash("mdims:" + day) % urutDim.length;
+  const order = urutDim.slice(off).concat(urutDim.slice(0, off));
+  for (const dim of order) {
+    if (picked.length >= count) break;
+    const dalamDim = ranked.filter((x) => (x.m.dim || "goal") === dim);
+    if (!dalamDim.length) continue;
+    const i = hash("missionpick:" + day + ":" + dim) % dalamDim.length;
+    picked.push(dalamDim[i]);
+  }
+
+  // Pengisi kalau jumlah dimensi lebih sedikit dari jumlah misi yang diminta,
+  // misalnya pool cuma punya satu dimensi.
+  for (const x of ranked) {
+    if (picked.length >= count) break;
+    if (!picked.includes(x)) picked.push(x);
+  }
+
+  return picked.slice(0, count).map((x) => x.m);
 };

@@ -4,9 +4,9 @@
  * aplikasi tetap bisa dipakai untuk demo/kompetisi.
  */
 
-import { CASES, DEFAULT_DATA, MISSIONS } from "./data";
+import { CASES, DEFAULT_DATA, MISSIONS, MISSIONS_PER_DAY } from "./data";
 import { challengeById, setRemoteChallenges } from "./challenges";
-import { monthKey, todayKey, uid } from "./util";
+import { dailyMissions, monthKey, todayKey, uid } from "./util";
 import { toAmount } from "./money";
 import { balanceOf } from "./savings";
 import { answerQuiz, applyReward, continueFree, dimOf, finishQuiz, shootForDay, startQuiz, unlockBadges } from "./rewards";
@@ -27,6 +27,7 @@ function seed() {
   d.doneChallenges = [];
   d.lessonsDone = [];
   d.doneMissions = [];
+  d.missionLog = {};
   d.challengeCategories = [];
   d.challengeReflections = [];
   d.avatarUrl = null;
@@ -633,10 +634,16 @@ export const store = {
   async completeMission(id) {
     await delay();
     const u = db.user;
-    if (u.doneMissions.includes(id)) return { already: true, user: userView() };
-    const m = MISSIONS.find((x) => x.id === id) || {};
-    u.doneMissions.push(id);
-    grant(m.pts || 40, m.dim || "goal", 2);
+    const hariIni = todayKey();
+    const undian = dailyMissions(MISSIONS, MISSIONS_PER_DAY, hariIni);
+    const misi = undian.find((x) => x.id === id);
+    if (!misi) return { notToday: true, user: userView() };
+    if ((u.missionLog || {})[id] === hariIni) {
+      return { already: true, user: userView() };
+    }
+    if (!u.doneMissions.includes(id)) u.doneMissions.push(id);
+    u.missionLog = { ...(u.missionLog || {}), [id]: hariIni };
+    grant(misi.pts || 40, misi.dim || "goal", 2);
     return { user: userView() };
   },
 

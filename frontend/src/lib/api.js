@@ -2,7 +2,7 @@
 // bisa memakai keduanya secara bergantian (demo vs live).
 
 import { createClient } from "@supabase/supabase-js";
-import { MISSIONS } from "./data";
+import { MISSIONS, MISSIONS_PER_DAY } from "./data";
 import { challengeById, setRemoteChallenges } from "./challenges";
 import { fromChallengeRow, toChallengeRow } from "./challengeRow";
 import { toAmount } from "./money";
@@ -26,7 +26,7 @@ import {
   startQuiz,
   unlockBadges
 } from "./rewards";
-import { monthKey, todayKey } from "./util";
+import { dailyMissions, monthKey, todayKey } from "./util";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -107,6 +107,7 @@ function toUser(row) {
     avatarUrl: row.avatar_url || null,
     caseIndex: row.case_index,
     doneMissions: row.done_missions,
+    missionLog: row.mission_log || {},
     badges: row.badges,
     savingGoal: Number(row.saving_goal),
     savingCurrent: Number(row.saving_current),
@@ -137,6 +138,7 @@ function toRow(user) {
     avatar_url: user.avatarUrl || null,
     case_index: user.caseIndex,
     done_missions: user.doneMissions,
+    mission_log: user.missionLog || {},
     badges: user.badges,
     saving_goal: user.savingGoal,
     saving_current: user.savingCurrent,
@@ -221,6 +223,7 @@ function freshUser(name) {
     avatarUrl: null,
     caseIndex: 0,
     doneMissions: [],
+    missionLog: {},
     badges: [],
     savingGoal: 300000,
     savingCurrent: 0,
@@ -677,11 +680,26 @@ export const api = {
     const c = needClient();
     const au = await sessionUser();
     const current = await loadProfile(au.id);
-    if (current.doneMissions.includes(id)) return { already: true, user: current };
-    const m = MISSIONS.find((x) => x.id === id) || {};
+
+    // Id harus benar-benar misi yang diundi hari ini. Tanpa cek ini, klien
+    // tinggal mengirim id apa pun dan mutateUser akan tetap memberikannya
+    // hadiah, karena mutateUser tidak tahu misi mana yang sedang diundi.
+    const hariIni = todayKey();
+    const undian = dailyMissions(MISSIONS, MISSIONS_PER_DAY, hariIni);
+    const misi = undian.find((x) => x.id === id);
+    if (!misi) return { notToday: true, user: current };
+
+    // Pengecekan per-hari, bukan selamanya. Misi boleh muncul lagi besok,
+    // jadi yang dicek adalah tanggal selesai terakhir, bukan apakah id ini
+    // pernah ada di done_missions.
+    if ((current.missionLog || {})[id] === hariIni) {
+      return { already: true, user: current };
+    }
+
     const user = await mutateUser(au.id, (u) => {
-      u.doneMissions.push(id);
-      applyReward(u, m.pts || 40, m.dim || "goal", 2);
+      if (!u.doneMissions.includes(id)) u.doneMissions.push(id);
+      u.missionLog = { ...(u.missionLog || {}), [id]: hariIni };
+      applyReward(u, misi.pts || 40, misi.dim || "goal", 2);
     });
     return { user };
   },

@@ -1860,6 +1860,19 @@ select:focus-visible {
 
 /* ================= Family Mission ================= */
 
+.mission-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.mission-head p {
+  margin: 0;
+}
+
 .mission-card {
   display: flex;
   flex-direction: column;
