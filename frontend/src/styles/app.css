@@ -3756,7 +3756,8 @@ select:focus-visible {
    terpotong; sudut-rounded cover dipindah ke .goal-card-cover. */
 .goal-card {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   background: var(--card, #fff);
   border: 1px solid var(--line, rgba(15, 23, 42, 0.08));
@@ -3770,7 +3771,9 @@ select:focus-visible {
    bawaan dibuang dulu, termasuk outline, lalu focus-visible dikembalikan
    sendiri supaya tetap ada penanda fokus untuk pengguna keyboard. */
 .goal-card-open {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   width: 100%;
   padding: 0;
   text-align: left;
@@ -3880,18 +3883,27 @@ select:focus-visible {
 /* Cover kartu daftar sengaja pendek (band, bukan poster). Di lebar
    desktop kartu ini bisa 880px, dan aspect-ratio 16/7 di situ bikin satu
    kartu eats 500px tinggi sehingga daftar goal jadi satu kolom panjang. */
-/* Sudut-rounded pindah ke sini karena .goal-card tidak lagi memakai
-   overflow:hidden (dropdown menunya akan terpotong). */
+/* Tinggi cover mengikuti lebar kolom, bukan tetap pendek. Di dua kolom
+   (~434px) cover 96px menghasilkan rasio 4.5:1, yaitu pita yang memanjang
+   ke samping dan foto tujuan jadi tidak terbaca. 150px memberi ~2.9:1 di
+   desktop dan ~2.4:1 di mobile, jadi proporsional di kedua lebar. */
 .goal-card-cover {
-  height: 96px;
+  min-height: 150px;
   border-radius: 15px 15px 0 0;
   background: linear-gradient(135deg, var(--green-soft), var(--blue-soft));
   display: grid;
   place-items: center;
   overflow: hidden;
+  position: relative;
+  /* Sisa tinggi kartu dipakai banner, bukan menyisakan strip kosong di bawah
+     konten yang tidak bisa diklik. Basis 0 supaya tinggi gambar asli tidak
+     ikut menentukan tinggi kartu. */
+  flex: 1 1 0;
 }
 
 .goal-card-cover img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -3907,7 +3919,7 @@ select:focus-visible {
 
 /* Goal utama boleh lebih tinggi karena hanya satu dan jadi titik fokus. */
 .goal-card.is-featured .goal-card-cover {
-  height: 140px;
+  min-height: 185px;
 }
 
 /* Preview gambar di dalam modal create/edit. */
@@ -3919,19 +3931,14 @@ select:focus-visible {
   display: block;
 }
 
-/* Di desktop daftar jadi beberapa kolom supaya tidak memanjang ke bawah.
-   Minimumnya harus berupa px, bukan 0: repeat(auto-fill, ...) menghitung
-   jumlah kolom dari min track sizing, jadi minmax(0, 1fr) membiarkan
-   kolom runtuh jadi 2px. */
+/* Dua kolom tetap, bukan auto-fill. Dengan auto-fill + minmax(280px, 1fr)
+   di layar 1280px muat empat kartu, dan tiap banner jadi band selebar
+   ~290px dengan tinggi 96px: gambar terngepas dan rasiobanya menyimpang.
+   Dua kolom membuat tiap kartu ~560px, cukup proporsional untuk foto
+   tujuan, dan kartu keempat turun ke baris berikutnya. */
 @media (min-width: 720px) {
   .goal-list {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-
-  /* Goal utama tetap satu kolom penuh: dia titik fokus halaman ini, bukan
-     sekadar satu kartu di antara kartu lain. */
-  .goal-list-featured {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

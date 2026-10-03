@@ -8,6 +8,7 @@ import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
 import { parseThousands } from "../lib/money";
 import { daysLeft, savedPercent } from "../lib/savings";
+import { useCoverMap, useCoverUrl } from "../lib/useCovers";
 import { rupiah } from "../lib/util";
 
 const G = "goals";
@@ -20,6 +21,9 @@ export function GoalForm({ initial, submitLabel, onSubmit, busy, onPickCover }) 
   const [cadence, setCadence] = useState(initial?.cadenceAmount ?? "");
   const [unit, setUnit] = useState(initial?.cadenceUnit || "day");
   const [coverUrl, setCoverUrl] = useState(initial?.coverUrl || "");
+  // coverUrl adalah nilai yang disimpan (path Storage di produksi), sedangkan
+  // coverSrc yang dipakai <img>. Keduanya berbeda begitu bucket jadi privat.
+  const coverSrc = useCoverUrl(coverUrl);
 
   const pilihCover = async (file) => {
     const up = await onPickCover(file);
@@ -92,11 +96,14 @@ export function GoalForm({ initial, submitLabel, onSubmit, busy, onPickCover }) 
                 const f = e.target.files?.[0];
                 //nolint
                 e.target.value = "";
-                if (f) onPickCover(f);
+                // pilihCover, bukan onPickCover langsung: pemanggilan langsung
+                // mengunggah gambarnya tapi membuang URL hasilnya, sehingga
+                // coverUrl tetap kosong dan submit menyimpan tanpa cover.
+                if (f) pilihCover(f);
               }}
             />
           </label>
-          {coverUrl ? <img className="goal-cover-preview" src={coverUrl} alt="" /> : null}
+          {coverSrc ? <img className="goal-cover-preview" src={coverSrc} alt="" /> : null}
         </div>
       ) : null}
 
@@ -112,6 +119,8 @@ export default function Saving() {
   const { t } = useI18n();
   const [goals, setGoals] = useState([]);
   const [busy, setBusy] = useState(false);
+  // Semua cover ditandatangani sekali per daftar, bukan satu per kartu.
+  const coverMap = useCoverMap(goals.map((g) => g.coverUrl));
 
   const load = async () => {
     const res = await run((s) => s.savingGoals());
@@ -216,42 +225,29 @@ export default function Saving() {
           </button>
         </div>
       ) : (
-        <>
-          {/* Goal utama ditampilkan sendirian di atas, sisanya dikelompokkan
-              di bawah. Kalau semua goal dirender di daftar pertama lalu
-              slice(1) dirender lagi, goal kedua ke-n akan muncul dua kali. */}
-          <div className="goal-list goal-list-featured">
+        // Satu grid untuk semua goal, dua kolom lalu turun. Sebelumnya goal
+        // utama dipisah sendirian di baris penuh: banner selebar ~1200px dengan
+        // tinggi 140px terbaca sebagai pita yang memanjang, bukan foto tujuan.
+        // Goal pertama tetap dapat cover lebih tinggi sebagai penandanya.
+        <div className="goal-list">
+          {goals.map((g, i) => (
             <GoalCard
-              goal={goals[0]}
-              featured
-              onOpen={() => openGoal(goals[0].id)}
-              onEdit={() => ubah(goals[0])}
-              onDelete={() => hapus(goals[0])}
+              key={g.id}
+              goal={g}
+              src={coverMap[g.coverUrl] || g.coverUrl}
+              featured={i === 0}
+              onOpen={() => openGoal(g.id)}
+              onEdit={() => ubah(g)}
+              onDelete={() => hapus(g)}
             />
-          </div>
-          {goals.length > 1 && (
-            <>
-              <h3 className="section-title">{t("g.others")}</h3>
-              <div className="goal-list">
-                {goals.slice(1).map((g) => (
-                  <GoalCard
-                    key={g.id}
-                    goal={g}
-                    onOpen={() => openGoal(g.id)}
-                    onEdit={() => ubah(g)}
-                    onDelete={() => hapus(g)}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </>
+          ))}
+        </div>
       )}
     </>
   );
 }
 
-function GoalCard({ goal, onOpen, onEdit, onDelete, featured }) {
+function GoalCard({ goal, src, onOpen, onEdit, onDelete, featured }) {
   const { t } = useI18n();
   const pct = savedPercent(goal.targetAmount, goal.balance);
   const sisa = daysLeft(goal.targetAmount, goal.balance, goal.cadenceAmount, goal.cadenceUnit);
@@ -264,8 +260,8 @@ function GoalCard({ goal, onOpen, onEdit, onDelete, featured }) {
     <div className={featured ? "goal-card is-featured" : "goal-card"}>
       <button className="goal-card-open" onClick={onOpen}>
         <div className="goal-card-cover">
-          {goal.coverUrl ? (
-            <img src={goal.coverUrl} alt="" />
+          {src ? (
+            <img src={src} alt="" />
           ) : (
             <span className="goal-card-cover-empty" aria-hidden="true">
               {goal.name.slice(0, 1).toUpperCase()}

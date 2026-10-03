@@ -192,6 +192,49 @@ async function delay() {
   return new Promise((r) => setTimeout(r, 60));
 }
 
+/**
+ * Ubah file gambar menjadi data URL, diperkecil dulu lewat canvas.
+ *
+ * Demo tidak punya Supabase Storage, jadi hasilnya disimpan langsung di
+ * localStorage sebagai data URL. Foto HP berukuran penuh bisa mencapai
+ * beberapa megabyte dan langsung menghabiskan kuota localStorage, jadi
+ * gambar diperkecil ke sisi terpanjang 900px dan dikompres ulang sebagai
+ * JPEG sebelum disimpan.
+ */
+function imageFileToDataUrl(file, maxEdge = 900) {
+  return new Promise((resolve, reject) => {
+    // err.key dibaca run() untuk diterjemahkan, jadi pesan error di sini
+    // cukup Bahasa Indonesia sebagai nilai cadangan.
+    const fail = (fallback) => {
+      const err = new Error(fallback);
+      err.key = "err.notImage";
+      reject(err);
+    };
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type || "")) {
+      fail("Berkas harus berupa gambar JPG, PNG, atau WebP");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => fail("Gambar tidak bisa dibaca");
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => fail("Format gambar tidak didukung");
+      img.onload = () => {
+        const skala = Math.min(1, maxEdge / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * skala));
+        const h = Math.max(1, Math.round(img.height * skala));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.72));
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export const store = {
   async getSessionUser() {
     await delay();
@@ -489,10 +532,17 @@ export const store = {
     return true;
   },
 
-  // Demo tidak punya storage sungguhan, jadi tidak ada yang diunggah.
-  async uploadSavingCover() {
+  // Demo tidak punya storage sungguhan, jadi "unggah" berarti perkecil gambar
+  // lalu simpan sebagai data URL. Sebelumnya fungsi ini mengembalikan null,
+  // sehingga memilih file di mode demo terlihat seperti tidak ada respons.
+  async uploadSavingCover(file) {
     await delay();
-    return null;
+    return imageFileToDataUrl(file);
+  },
+
+  // Data URL bisa langsung dipakai <img>, jadi tidak ada yang perlu ditandatangani.
+  async signSavingCover(value) {
+    return value || null;
   },
 
   async budget() {

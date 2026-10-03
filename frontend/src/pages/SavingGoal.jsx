@@ -7,6 +7,7 @@ import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
 import { parseThousands } from "../lib/money";
 import { summarize } from "../lib/savings";
+import { useCoverUrl } from "../lib/useCovers";
 import { rupiah } from "../lib/util";
 
 const PACE_TONE = { ahead: "green", onTrack: "amber", late: "red", done: "green", unknown: "muted" };
@@ -24,6 +25,8 @@ export default function SavingGoal() {
   const [goal, setGoal] = useState(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // goal.coverUrl adalah path Storage di produksi; hero memakai URL bertanda tangan.
+  const coverSrc = useCoverUrl(goal?.coverUrl);
 
   const load = async () => {
     const res = await run((s) => s.savingGoals());
@@ -112,8 +115,8 @@ export default function SavingGoal() {
       <BackLink label={t("g.title")} target="saving" />
 
       <div className="goal-hero">
-        {goal.coverUrl ? (
-          <img className="goal-hero-img" src={goal.coverUrl} alt="" />
+        {coverSrc ? (
+          <img className="goal-hero-img" src={coverSrc} alt="" />
         ) : (
           <div className="goal-hero-img goal-hero-empty">
             <span>{goal.name.slice(0, 1).toUpperCase()}</span>

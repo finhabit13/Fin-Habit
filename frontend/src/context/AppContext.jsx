@@ -157,7 +157,9 @@ export function AppProvider({ children }) {
           }
           if (!silent) showToast(err.key ? t(err.key) : err.message);
         } else {
-          if (!silent) showToast(err.message || t("toast.error"));
+          // err.key tidak dibatasi ke ApiError: adapter demo melempar Error
+          // biasa, dan instanceof bisa gagal kalau modul terduplikasi.
+          if (!silent) showToast(err.key ? t(err.key) : err.message || t("toast.error"));
         }
         return { ok: false };
       }

@@ -82,9 +82,17 @@ values ('saving-covers', 'saving-covers', true, 5242880,
         array['image/jpeg','image/png','image/webp'])
 on conflict (id) do nothing;
 
+-- Policy baca langsung ke folder milik sendiri, sama seperti yang dipasang
+-- MIGRASI 12. Tidak memakai policy longgar "bucket_id = 'saving-covers'" tanpa
+-- syarat autentikasi, karena file ini harus aman dijalankan ulang SETELAH
+-- MIGRASI 12: policy longgar akan menimpa pengetatan ketatnya dan membuka lagi
+-- bucket yang sudah privat. Bucket publik tetap bisa dibaca lewat jalur
+-- /object/public/, jadi tidak ada yang berubah untuk klien versi lama.
 drop policy if exists "saving covers read" on storage.objects;
 create policy "saving covers read" on storage.objects
-  for select using (bucket_id = 'saving-covers');
+  for select to authenticated
+  using (bucket_id = 'saving-covers'
+     and (storage.foldername(name))[1] = auth.uid()::text);
 
 drop policy if exists "saving covers insert own" on storage.objects;
 create policy "saving covers insert own" on storage.objects
@@ -157,12 +165,21 @@ create policy "saving_tx delete own" on public.saving_transactions
 insert into public.saving_goals (user_id, name, target_amount, cadence_amount, cadence_unit)
 select p.id, 'Tabungan Saya', p.saving_goal, 0, 'day'
 from public.profiles p
-where p.saving_goal <> 300000 or p.saving_current > 0;
+where (p.saving_goal <> 300000 or p.saving_current > 0)
+  -- Penjaga idempotensi. Tanpa ini, menjalankan ulang file ini menabrak unique
+  -- index dan seluruh script berhenti dengan "duplicate key value violates
+  -- unique constraint". Pengecekan harus di dalam INSERT, bukan lewat index.
+  and not exists (
+    select 1 from public.saving_goals g
+    where g.user_id = p.id and g.name = 'Tabungan Saya'
+  );
 
--- Penjaga biar file ini tetap aman kalau dijalankan ulang.
-create unique index if not exists saving_goals_legacy_once
-  on public.saving_goals (user_id)
-  where name = 'Tabungan Saya';
+-- Index unique parsial ini dulu dipakai sebagai penjaga migrasi, tapi setelah
+-- data pindah dia berubah jadi constraint permanen atas data pengguna: orang
+-- yang sah-saja ingin punya dua goal bernama "Tabungan Saya" akan mendapat
+-- error 23505 mentah dari database. Pengecekan NOT EXISTS di atas sudah
+-- menangani eksekusi ulang, jadi index ini tidak lagi diperlukan.
+drop index if exists public.saving_goals_legacy_once;
 
 -- Saldo lamanya ikut jadi satu transaksi pemasukan supaya angka yang dulu
 -- terlihat di halaman saving tidak ikut hilang.

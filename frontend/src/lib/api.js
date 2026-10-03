@@ -12,6 +12,7 @@ import {
   deleteGoal,
   deleteTransaction,
   loadGoalsWithBalance,
+  signCover,
   updateGoal,
   uploadCover
 } from "./savingsApi";
@@ -543,6 +544,14 @@ export const api = {
     const c = needClient();
     const au = await sessionUser();
     return uploadCover(c, au.id, file);
+  },
+
+  // Nilai cover yang disimpan bisa berupa path Storage, data URL (mode demo),
+  // atau URL http. Yang path perlu ditandatangani sebelum dipakai di <img>.
+  signSavingCover: async (value) => {
+    if (!value) return null;
+    const c = needClient();
+    return signCover(c, value);
   },
 
   budget: async () => {

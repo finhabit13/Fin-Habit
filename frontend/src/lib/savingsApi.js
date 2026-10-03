@@ -196,6 +196,13 @@ export async function deleteTransaction(c, userId, txId) {
  * storage memaksa itu. Kalau tidak, upload ditolak tanpa pesan yang jelas.
  */
 export async function uploadCover(c, userId, file) {
+  // Bucket hanya menerima ketiga tipe ini, jadi tolak lebih awal supaya
+  // pesannya diterjemahkan, bukan pesan error mentah dari Storage.
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type || "")) {
+    const err = new Error("Berkas harus berupa gambar JPG, PNG, atau WebP");
+    err.key = "err.notImage";
+    throw err;
+  }
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
   const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await c.storage.from("saving-covers").upload(path, file, {
@@ -203,6 +210,23 @@ export async function uploadCover(c, userId, file) {
     upsert: false
   });
   if (error) throw error;
-  const { data } = c.storage.from("saving-covers").getPublicUrl(path);
-  return data.publicUrl;
+  // Path, bukan URL publik. Bucket-nya privat, jadi URL publik tidak bisa
+  // dipakai dan akan kedaluwarsa. Penandatanganan dilakukan saat render.
+  return path;
+}
+
+/**
+ * Ubah nilai cover yang tersimpan menjadi URL yang bisa dipakai <img>.
+ *
+ * Tiga bentuk nilai yang mungkin muncul:
+ *   - path relatif di bucket saving-covers -> ditandatangani
+ *   - data:...                            -> mode demo, langsung dipakai
+ *   - http(s)://...                       -> URL lama atau gambar eksternal
+ */
+export async function signCover(c, value) {
+  if (!value) return null;
+  if (value.startsWith("data:") || /^https?:\/\//i.test(value)) return value;
+  const { data, error } = await c.storage.from("saving-covers").createSignedUrl(value, 3600);
+  if (error) return null;
+  return data?.signedUrl || null;
 }
