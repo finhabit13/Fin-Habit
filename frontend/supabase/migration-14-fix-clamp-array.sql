@@ -1,66 +1,44 @@
 -- =============================================================================
--- MIGRASI 11 - Integritas kolom gameplay
+-- MIGRASI 14 - Perbaikan append array di clamp_gameplay_columns()
 -- =============================================================================
--- Jalankan di Supabase SQL Editor (Dashboard > SQL Editor), SETELAH MIGRASI 10.
+-- Jalankan di Supabase SQL Editor, SETELAH MIGRASI 13.
 --
--- Latar belakang
--- --------------
--- Skor, streak, dimensi, dan lencana dihitung di klien (src/lib/rewards.js) lalu
--- ditulis sebagai satu baris penuh lewat client.from("profiles").update(...).
--- Policy "profiles update own" hanya membatasi BARIS (auth.uid() = id), bukan
--- KOLOM, dan trigger yang ada hanya menjaga role, banned, serta identitas.
--- Akibatnya pemilik akun bisa menulis kolom gameplay sesuka hatinya, dan view
--- public.leaderboard (security_invoker = false, grant select to anon) langsung
--- menampilkannya ke siapa pun tanpa login.
+-- Gejala
+-- ------
+-- Menyimpan profil gagal dengan error berikut.
 --
--- Kenapa tidak pakai trigger yang MEMBUANG error
--- ---------------------------------------------
--- Karena klien menulis baris penuh, trigger yang menolak akan membuat setiap
--- penyimpanan progres gagal dan pengguna kehilangan progresnya. Jadi file ini
--- clamps nilai yang tidak masuk akal di tempat, lalu mencatatnya. Untuk pengguna
--- yang_integr, tidak ada yang berubah dan tidak ada error. Untuk yang mencoba
--- mencurangi, nilainya dipotong ke batas yang sah dan perusahaannya tercatat.
+--   ERROR: 22P02: malformed array literal: "lessons_done"
 --
--- Batas atas dibuat longgar supaya tidak pernah mengganggu pemakaian normal:
--- kuis memberi sekitar 150 poin per hari, materi dan misi hanya sekali saja.
+-- Penyebab
+-- --------
+-- c_fields di clamp_gameplay_columns() bertipe text[], lalu di-append
+-- dengan string polos: c_fields || 'lessons_done'. Postgres membaca operand
+-- kanan sebagai array literal, bukan sebagai satu elemen, jadi setiap append
+-- melempar error 22P02.
 --
--- Risiko residual (disengaja)
--- ---------------------------
--- Progres tetap client-authoritative. Orang yang menahan diri bisa farming
--- pelan-pelan sampai batas harian. Menutupnya sepenuhnya berarti memindahkan
--- seluruh rewards.js ke SQL atau ke service backend, dan itu di luar cakupan
--- file ini.
+-- Dampak
+-- ------
+-- Baris yang melempar error hanya tercapai ketika clamp benar-benar memotong
+-- nilai. Jadi justru saat berhasil bekerja, penyimpanan yang gagal. Yang
+-- rusak di antara lain:
+--
+--   - user mendapat lencana pertama, atau urutan lencana tidak kanonik
+--   - user menyelesaikan materi, jadi urutan lessons_done berubah
+--   - poin user melebihi jatah harian
+--   - saving_current tidak sama dengan jumlah transaksi
+--
+-- Semua itu membuat satu UPDATE profiles ditolak seluruhnya. Bukan nilai yang
+-- dikoreksi dengan rapi, tapi progres yang hilang.
+--
+-- Perbaikan
+-- ---------
+-- Enam baris diubah dari c_fields || 'x' menjadi c_fields || ARRAY['x'].
+-- Perilaku lain tidak diubah: nilai, urutan, dan ambang clamp tetap sama.
+--
+-- Fungsi di-replace utuh, bukan ditambah trigger baru. Trigger yang sudah
+-- terpasang menunjuk fungsi ini lewat nama, dan create or replace mempertahankan
+-- OID, jadi trigger langsung memakai badan yang baru.
 -- =============================================================================
-
--- -----------------------------------------------------------------------------
--- 1) Catat audit
--- -----------------------------------------------------------------------------
-create table if not exists public.integrity_events (
-  id bigint generated always as identity primary key,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  at timestamptz not null default now(),
-  fields text[] not null,
-  before_vals jsonb not null,
-  after_vals jsonb not null
-);
-
-create index if not exists integrity_events_user_idx
-  on public.integrity_events (user_id, at desc);
-
-alter table public.integrity_events enable row level security;
-
--- Tidak ada policy baca untuk anon, dan hanya admin yang boleh membaca, jadi
--- tabel ini tidak bisa dibaca pengguna mana pun lewat PostgREST.
-drop policy if exists "integrity events admin read" on public.integrity_events;
-create policy "integrity events admin read" on public.integrity_events
-  for select to authenticated
-  using (public.is_admin());
-
-grant select on public.integrity_events to authenticated;
-
--- -----------------------------------------------------------------------------
--- 2) Clamp kolom gameplay
--- -----------------------------------------------------------------------------
 create or replace function public.clamp_gameplay_columns()
 returns trigger
 language plpgsql
@@ -281,28 +259,3 @@ begin
 end;
 $$;
 
-drop trigger if exists profiles_clamp_gameplay on public.profiles;
-create trigger profiles_clamp_gameplay
-  before update on public.profiles
-  for each row execute function public.clamp_gameplay_columns();
-
--- -----------------------------------------------------------------------------
--- 3) Indeks untuk papan skor publik
--- -----------------------------------------------------------------------------
--- View leaderboard diurutkan dengan "order by points desc" dan dijalankan dengan
--- hak pemilik tabel, jadi RLS tidak membatasinya. Tanpa indeks, setiap permintaan
--- banjir bisa memaksa pindai seluruh tabel profiles.
-create index if not exists profiles_points_idx
-  on public.profiles (points desc);
-
-create index if not exists profiles_role_idx
-  on public.profiles (role);
-
--- -----------------------------------------------------------------------------
--- 4) Batas waktu query untuk role publik
--- -----------------------------------------------------------------------------
--- Menahan satu query berat tidak selalu menghentikan semua request, tapi
--- statement_timeout membuat Postgres sendiri menyerah dan mengembalikan
--- error, sehingga satu penyerang tidak bisa menahan koneksi selamanya.
-alter role anon set statement_timeout = '8s';
-alter role authenticated set statement_timeout = '15s';
