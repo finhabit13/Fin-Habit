@@ -233,7 +233,7 @@ function load() {
           savingTransactions: parsed.savingTransactions || seedSavingTransactions(parsed.savingGoals),
           // "family" sengaja tidak ||= seed: null berarti pengguna memang sudah
           // keluar atau menghapus family-nya, dan itu harus dihormati.
-          family: parsed.family === undefined ? seedFamily(parsed.user?.name, parsed.user) : parsed.family
+          family: parsed.family === undefined ? null : parsed.family
         };
       }
       const goals = seedSavingGoals();
@@ -241,7 +241,7 @@ function load() {
         ...parsed,
         savingGoals: goals,
         savingTransactions: seedSavingTransactions(goals),
-        family: parsed.family === undefined ? seedFamily(parsed.user?.name, parsed.user) : parsed.family
+        family: parsed.family === undefined ? null : parsed.family
       };
       persist(migrated);
       return migrated;
@@ -257,7 +257,7 @@ function load() {
     challenges: [],
     savingGoals: goals,
     savingTransactions: seedSavingTransactions(goals),
-    family: seedFamily(user.name, user)
+    family: null
   };
   persist(fresh);
   return fresh;
