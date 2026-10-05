@@ -153,12 +153,19 @@ function seedSavingTransactions(goals) {
  * baris memakai userId "me" dan tanggal hari ini, kuota harian langsung
  * berkurang sebelum user menyentuh apa pun.
  */
-function seedFamily(name) {
+// User untuk baris "me" di roster sengaja jadi argumen, bukan dibaca dari db.
+// seedFamily() dipanggil dari dalam load(), sementara db diassign dari hasil
+// load() itu sendiri: "let db = load()". Membaca db di sini membuat baris itu
+// masuk dead zone dan melempar "Cannot access 'db' before initialization" tepat
+// untuk pengguna yang pertama kali membuka aplikasi, yaitu saat tidak ada
+// state tersimpan dan seedFamily() baru dipanggil. Di bundle produksi ini jadi
+// ReferenceError yang halaman putihnya tanpa jejak di console.
+function seedFamily(name, user) {
   const lalu = (hari) => new Date(Date.now() - hari * 86400000).toISOString();
   const familyId = uid();
   const misiId = [uid(), uid()];
   const roster = [
-    { userId: "me", role: "owner", joinedAt: lalu(12), name: name || "Bailey", avatarUrl: null, points: db.user.points, streak: db.user.streak },
+    { userId: "me", role: "owner", joinedAt: lalu(12), name: name || "Bailey", avatarUrl: null, points: user?.points ?? 0, streak: user?.streak ?? 0 },
     { userId: uid(), role: "member", joinedAt: lalu(11), name: "Ibu Rina", avatarUrl: null, points: 1240, streak: 12 },
     { userId: uid(), role: "member", joinedAt: lalu(9), name: "Adik Fajar", avatarUrl: null, points: 430, streak: 4 }
   ];
@@ -226,7 +233,7 @@ function load() {
           savingTransactions: parsed.savingTransactions || seedSavingTransactions(parsed.savingGoals),
           // "family" sengaja tidak ||= seed: null berarti pengguna memang sudah
           // keluar atau menghapus family-nya, dan itu harus dihormati.
-          family: parsed.family === undefined ? seedFamily(parsed.user?.name) : parsed.family
+          family: parsed.family === undefined ? seedFamily(parsed.user?.name, parsed.user) : parsed.family
         };
       }
       const goals = seedSavingGoals();
@@ -234,7 +241,7 @@ function load() {
         ...parsed,
         savingGoals: goals,
         savingTransactions: seedSavingTransactions(goals),
-        family: parsed.family === undefined ? seedFamily(parsed.user?.name) : parsed.family
+        family: parsed.family === undefined ? seedFamily(parsed.user?.name, parsed.user) : parsed.family
       };
       persist(migrated);
       return migrated;
@@ -250,7 +257,7 @@ function load() {
     challenges: [],
     savingGoals: goals,
     savingTransactions: seedSavingTransactions(goals),
-    family: seedFamily(user.name)
+    family: seedFamily(user.name, user)
   };
   persist(fresh);
   return fresh;
@@ -589,7 +596,7 @@ export const store = {
     db.expenses = seedExpenses();
     // Family ikut diseed ulang supaya demo yang sudah dikosongkan lewat "hapus
     // family" tidak terlihat rusak.
-    db.family = seedFamily(db.user.name);
+    db.family = seedFamily(db.user.name, db.user);
     persist();
     return userView();
   },

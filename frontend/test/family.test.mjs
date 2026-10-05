@@ -330,6 +330,15 @@ const punyaMethod = (src, name) =>
 ADAPTER_METHODS.forEach((name) => {
   cekBenar("api.js punya " + name, punyaMethod(apiSrc, name));
   cekBenar("store.js punya " + name, punyaMethod(storeSrc, name));
+
+// seedFamily() dipanggil dari dalam load(), jadi tidak boleh membaca state
+// modul db: db diassign dari hasil load() itu sendiri ("let db = load()"),
+// jadi baris yang membacanya ada di dead zone dan akan melempar ReferenceError
+// tepat ketika localStorage masih kosong. Bundle produksi menutupinya jadi
+// "Cannot access 'N' before initialization" dan seluruh aplikasi putih.
+const isiSeedFamily = (storeSrc.match(/function seedFamily\([\s\S]*?\n\}/) || [""])[0];
+cek("seedFamily ditemukan", isiSeedFamily.length > 0, true);
+cekBenar("seedFamily tidak membaca state modul db", !/\bdb\b/.test(isiSeedFamily));
 });
 
 // Hadiah kontribusi harus tetap memakai konstanta yang sama, bukan angka yang
