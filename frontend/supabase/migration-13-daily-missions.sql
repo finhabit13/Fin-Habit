@@ -64,10 +64,16 @@ begin
   end if;
 
   -- Kunci di luar daftar misi dan nilai yang bukan tanggal YYYY-MM-DD dibuang.
-  -- Kunci di luar daftar misi dan nilai yang bukan tanggal YYYY-MM-DD dibuang.
   -- Tanggal palsu tidak akan lolos karena nilainya dibuang, tapi seperti
-  -- kolom gameplay lain, isinya tetap client-authoritative: hadiah masih
-  for c_key, c_val in select k, v from jsonb_each_text(new.mission_log) loop
+  -- kolom gameplay lain, isinya tetap client-authoritative.
+  --
+  -- jsonb_each_text() menghasilkan dua kolom bernama key dan value. Meminta
+  -- "k, v" di sini tidak akan kompilasi, dan akibatnya setiap update ke
+  -- profiles gagal dengan 42703 "column k does not exist". Trigger ini ada di
+  -- BEFORE UPDATE, jadi satu baris salah di fungsi ini mematikan seluruh
+  -- penulisan profil: challenge, kuis, dan misi keluarga semuanya berakhir
+  -- dengan update ke profiles.
+  for c_key, c_val in select key, value from jsonb_each_text(new.mission_log) loop
     if c_key = any(c_known) and c_val ~ '^\d{4}-\d{2}-\d{2}$' then
       c_out := c_out || jsonb_build_object(c_key, c_val);
     end if;

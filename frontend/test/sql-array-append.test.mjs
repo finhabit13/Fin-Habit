@@ -17,6 +17,17 @@
  *
  * Test ini membaca semua file SQL di supabase/ dan gagal kalau pola itu muncul
  * lagi. Murah, dan tidak perlu menjalankan database.
+ *
+ * Penjaga kedua di file ini untuk bug sekelas: nama kolom hasil fungsi set
+ * return yang tidak pernah di-compile. jsonb_each_text() menghasilkan kolom
+ * key dan value, sehingga "select k, v from jsonb_each_text(...)" di MIGRASI
+ * 13 membuat setiap UPDATE profiles ditolak dengan
+ *
+ *   ERROR: 42703: column "k" does not exist
+ *
+ * Jalur itu hanya tersentuh kalau mission_log berisi object, jadi bisa lolos
+ * dari migration check mana pun. Baris di sini dibaca tanpa menjalankan
+ * database, jadi cukup Murah untuk menangkapnya.
  */
 
 import { readdirSync, readFileSync } from "node:fs";
@@ -53,8 +64,41 @@ for (const file of files) {
   });
 }
 
+// Nama kolom yang bisa diminta dari jsonb_each_text(). Meminta nama lain dari
+// fungsi ini dijamin ditolak Postgres dengan 42703, dan karena pemanggilnya
+// biasanya trigger BEFORE UPDATE, seluruh penulisan tabel ikut mati.
+const masalahEachText = [];
+
 console.log("file SQL diperiksa : " + files.length);
 console.log("variabel array     : " + files.length + " file");
+
+for (const file of files) {
+  const baris = readFileSync(`${DIR}/${file}`, "utf8").split(/\r?\n/);
+  baris.forEach((l, i) => {
+    // Baris komentar dilewati: dokumentasi sengaja memuat contoh SQL salah
+    // supaya gejalanya mudah dicari.
+    if (l.trim().startsWith("--")) return;
+    const posisi = l.search(/from\s+jsonb_each_text\s*\(/i);
+    if (posisi < 0) return;
+    const select = l.slice(0, posisi);
+    // Huruf besar boleh: select KEY, VALUE tetap benar.
+    if (!/select\s+key\s*,\s*value\s*$/i.test(select)) {
+      masalahEachText.push({ file, baris: i + 1, teks: l.trim() });
+    }
+  });
+}
+
+if (masalahEachText.length) {
+  console.error("\nselect dari jsonb_each_text() dengan nama kolom yang salah:");
+  for (const p of masalahEachText) {
+    console.error(`  ${p.file}:${p.baris}`);
+    console.error(`      ${p.teks}`);
+    console.error(`      harus: select key, value from jsonb_each_text(...)`);
+  }
+  process.exit(1);
+}
+
+console.log("SEMUA SELECT jsonb_each_text AMAN");
 
 if (masalah.length) {
   console.error("\nappend string polos ke array, akan melempar 22P02:");

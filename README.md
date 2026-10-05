@@ -60,7 +60,7 @@ Buat project baru di [supabase.com](https://supabase.com). Buka **SQL Editor**, 
 
 Lalu di **Authentication → Sign In / Providers → Email**, matikan *Confirm email* supaya pendaftaran langsung masuk tanpa verifikasi (opsional tapi disarankan).
 
-Setelah `schema.sql`, jalankan file di `frontend/supabase/migration-*.sql` **berurutan dari nomor terkecil** (10 sampai 15). Untuk fitur Family Group, `migration-15-family-system.sql` yang penting karena menambah:
+Setelah `schema.sql`, jalankan file di `frontend/supabase/migration-*.sql` **berurutan dari nomor terkecil** (10 sampai 16). Untuk fitur Family Group, `migration-15-family-system.sql` yang penting karena menambah:
 
 - tabel `families`, `family_members`, `family_missions`, `family_mission_contributions`, plus kolom `profiles.family_id`
 - RLS **enabled** di keempat tabel itu, jadi tidak perlu `disable row level security` saat menjalankan migrasi
@@ -107,7 +107,7 @@ finhabit-app/
    ├─ src/context/      state app, auth, dan navigasi antar layar
    ├─ src/lib/          rewards (mesin poin), api (live), store (demo), family (aturan family group), data, util
    ├─ src/pages/        Home, Learn, Challenge, Expenses, Budget, Saving, Decision, Family, Score, Profile, Auth
-   └─ supabase/         schema.sql + migration-10 sampai migration-15
+   └─ supabase/         schema.sql + migration-10 sampai migration-16
 ```
 
 Logika poin, dimensi, dan badge hidup di satu sumber: `frontend/src/lib/rewards.js`. File ini dipakai oleh `api.js` (Supabase live) dan `store.js` (mode demo), jadi hasilnya selalu identik di kedua mode. Aturan main Family Group (validasi nama, kuota harian, progress bar) juga hidup di satu sumber: `frontend/src/lib/family.js`, dibaca kedua adapter itu, sehingga mode demo dan mode live tidak bisa berbeda aturan.
