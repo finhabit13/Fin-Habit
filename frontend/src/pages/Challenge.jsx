@@ -34,7 +34,15 @@ export default function Challenge() {
   // orang bisa centang semua langkah tanpa pernah menyentuh materinya.
   const hasLink = !!current.url;
   const sourceOk = !hasLink || opened;
-  const canFinish = allTicked && reflectionOk && sourceOk;
+  // Syarat yang belum terpenuhi. Tombol sengaja tidak memakai gabungan
+  // syarat ini untuk status disabled: begitu tombolnya mati, klik tidak
+  // melakukan apa-apa dan pengguna tidak tahu apa yang kurang. Daftar di bawah
+  // ini yang memberi tahu, dan toast di complete() tetap jadi pengaman kalau
+  // tombol diklik.
+  const blockers = [];
+  if (!allTicked) blockers.push(t("ch.checkAll"));
+  if (!reflectionOk) blockers.push(t("ch.reflectionShort"));
+  if (!sourceOk) blockers.push(t("ch.openFirst"));
   const progress = steps.length ? Math.round((done.length / steps.length) * 100) : 0;
   const finishedCount = todays.filter((c) => dateMap[c.id] === day).length;
 
@@ -145,11 +153,15 @@ export default function Challenge() {
           />
         </label>
 
-        {hasLink && !opened && !doneToday && (
-          <p className="challenge-gate muted small">{t("ch.gateHint")}</p>
+        {!doneToday && blockers.length > 0 && (
+          <ul className="challenge-blockers muted small">
+            {blockers.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
         )}
 
-        <button className="btn btn-primary btn-block" disabled={doneToday || !canFinish} onClick={complete}>
+        <button className="btn btn-primary btn-block" disabled={doneToday} onClick={complete}>
           {doneToday ? t("ch.doneToday") : t("ch.doIt")}
         </button>
       </div>

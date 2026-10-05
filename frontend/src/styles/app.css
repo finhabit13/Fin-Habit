@@ -798,6 +798,17 @@ select:focus-visible {
   line-height: 1.45;
 }
 
+/* Syarat yang belum terpenuhi sebelum tombol Selesaikan bisa dipakai. */
+.challenge-blockers {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  line-height: 1.45;
+}
+
+.challenge-blockers li + li {
+  margin-top: 4px;
+}
+
 .challenge-progress {
   display: flex;
   align-items: center;
