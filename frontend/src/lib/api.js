@@ -5,6 +5,15 @@ import { createClient } from "@supabase/supabase-js";
 import { MISSIONS, MISSIONS_PER_DAY } from "./data";
 import { challengeById, setRemoteChallenges } from "./challenges";
 import { fromChallengeRow, toChallengeRow } from "./challengeRow";
+import {
+  CONTRIB_PTS,
+  canContribute,
+  cleanDescription,
+  cleanFamilyName,
+  cleanInviteCode,
+  cleanMissionTarget,
+  cleanMissionTitle
+} from "./family";
 import { toAmount } from "./money";
 import {
   addTransaction,
@@ -18,6 +27,7 @@ import {
 } from "./savingsApi";
 import {
   answerQuiz,
+  applyContribution,
   applyReward,
   continueFree,
   dimOf,
@@ -202,6 +212,87 @@ function summary(month, spent, budget) {
   const pct = budget > 0 ? Math.round((spent / budget) * 1000) / 10 : 0;
   const status = budget <= 0 ? "none" : spent >= budget ? "over" : pct >= 80 ? "warn" : "safe";
   return { month, spent: Math.round(spent * 100) / 100, budget: Number(budget), pct, status };
+}
+
+/* ---------- Family group ---------- */
+
+// families, family_members, family_missions, family_mission_contributions
+// tidak pernah bisa dibaca lewat kolom profiles milik teammates, jadi nama dan
+// fotonya datang dari view family_roster (lihat migration 15).
+
+// Pesan dari raise exception di SQL arrive apa adanya, jadi dipetakan ke kunci
+// locale supaya toast tidak menampilkan kalimat teknis Postgres.
+const FAMILY_ERROR_KEYS = [
+  [/tidak ditemukan/i, "fa.errCode"],
+  [/sudah punya family/i, "fa.errHasFamily"],
+  [/sudah penuh/i, "fa.errFull"],
+  [/tidak valid/i, "fa.errName"],
+  [/Owner tidak dapat keluar/i, "fa.errOwnerLeave"],
+  [/row-level security|check constraint|foreign key/i, "fa.errDenied"]
+];
+
+function familyError(err) {
+  const raw = err?.message || "";
+  const hit = FAMILY_ERROR_KEYS.find(([re]) => re.test(raw));
+  return new ApiError(400, raw, hit ? hit[1] : "fa.errGeneric");
+}
+
+// Objek baru setiap panggilan: board kosong pernah ikut dikirim keluar dan
+// bisa saja diubah pemanggil, jadi tidak boleh berbagi referensi.
+const emptyBoard = () => ({
+  family: null,
+  role: null,
+  meId: null,
+  members: [],
+  missions: [],
+  contributions: []
+});
+
+async function membershipOf(c, authUserId) {
+  const { data, error } = await c
+    .from("family_members")
+    .select("family_id, role")
+    .eq("user_id", authUserId)
+    .limit(1);
+  if (error) throw new ApiError(500, error.message);
+  return (data || [])[0] || null;
+}
+
+function toMember(row) {
+  return {
+    userId: row.user_id,
+    role: row.role,
+    joinedAt: row.joined_at,
+    name: row.name || "?",
+    avatarUrl: row.avatar_url || null,
+    points: Number(row.points) || 0,
+    streak: Number(row.streak) || 0
+  };
+}
+
+function toFamilyMission(row) {
+  return {
+    id: row.id,
+    familyId: row.family_id,
+    title: row.title,
+    description: row.description || "",
+    target: Number(row.target) || 1,
+    current: Number(row.current) || 0,
+    status: row.status,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    completedAt: row.completed_at || null
+  };
+}
+
+function toContribution(row) {
+  return {
+    id: row.id,
+    missionId: row.mission_id,
+    userId: row.user_id,
+    value: Number(row.value) || 0,
+    createdAt: row.created_at
+  };
 }
 
 function freshUser(name) {
@@ -702,6 +793,203 @@ export const api = {
       applyReward(u, misi.pts || 40, misi.dim || "goal", 2);
     });
     return { user };
+  },
+
+  family: async () => {
+    const c = needClient();
+    const au = await sessionUser();
+    const member = await membershipOf(c, au.id);
+    if (!member) return emptyBoard();
+
+    const [fam, roster, missions] = await Promise.all([
+      c.from("families").select("id, name, owner_id, invite_code").eq("id", member.family_id).single(),
+      c
+        .from("family_roster")
+        .select("user_id, role, joined_at, name, avatar_url, points, streak")
+        .eq("family_id", member.family_id)
+        .order("joined_at", { ascending: true }),
+      c
+        .from("family_missions")
+        .select("id, family_id, title, description, target, current, status, created_by, created_at, completed_at")
+        .eq("family_id", member.family_id)
+        .order("created_at", { ascending: false })
+    ]);
+    if (fam.error) throw new ApiError(500, fam.error.message);
+    if (roster.error) throw new ApiError(500, roster.error.message);
+    if (missions.error) throw new ApiError(500, missions.error.message);
+
+    // Kontribusi tidak punya kolom family_id, jadi satu-satunya cara menyaringnya
+    // adalah lewat id misi. Family tanpa misi tidak perlu query sama sekali.
+    const list = missions.data || [];
+    let contributions = [];
+    if (list.length) {
+      const { data, error } = await c
+        .from("family_mission_contributions")
+        .select("id, mission_id, user_id, value, created_at")
+        .in(
+          "mission_id",
+          list.map((m) => m.id)
+        );
+      if (error) throw new ApiError(500, error.message);
+      contributions = data || [];
+    }
+
+    return {
+      family: {
+        id: fam.data.id,
+        name: fam.data.name,
+        ownerId: fam.data.owner_id,
+        inviteCode: fam.data.invite_code
+      },
+      role: member.role,
+      meId: au.id,
+      members: (roster.data || []).map(toMember),
+      missions: list.map(toFamilyMission),
+      contributions: contributions.map(toContribution)
+    };
+  },
+
+  createFamily: async ({ name }) => {
+    const c = needClient();
+    await sessionUser();
+    const cleaned = cleanFamilyName(name);
+    if (!cleaned.ok) throw new ApiError(400, "fa.errName", "fa.errName");
+    const { error } = await c.rpc("create_family", { p_name: cleaned.value });
+    if (error) throw familyError(error);
+    return { ok: true };
+  },
+
+  joinFamily: async ({ code }) => {
+    const c = needClient();
+    await sessionUser();
+    const cleaned = cleanInviteCode(code);
+    if (!cleaned.ok) throw new ApiError(400, "fa.errCode", "fa.errCode");
+    const { error } = await c.rpc("join_family", { p_code: cleaned.value });
+    if (error) throw familyError(error);
+    return { ok: true };
+  },
+
+  leaveFamily: async () => {
+    const c = needClient();
+    const au = await sessionUser();
+    const member = await membershipOf(c, au.id);
+    if (!member) return { ok: true };
+    // Dicek di klien juga Though trigger SQL akan menolaknya: tanpa ini
+    // owner akan melihat toast Postgres, bukan pesan yang dimengerti.
+    if (member.role === "owner") throw new ApiError(400, "fa.errOwnerLeave", "fa.errOwnerLeave");
+    const { error } = await c
+      .from("family_members")
+      .delete()
+      .eq("family_id", member.family_id)
+      .eq("user_id", au.id);
+    if (error) throw familyError(error);
+    return { ok: true };
+  },
+
+  deleteFamily: async () => {
+    const c = needClient();
+    const au = await sessionUser();
+    const member = await membershipOf(c, au.id);
+    if (!member) return { ok: true };
+    if (member.role !== "owner") throw new ApiError(403, "fa.errOwnerOnly", "fa.errOwnerOnly");
+    // Misi, kontribusi, dan baris anggota ikut terhapus lewat cascade.
+    const { error } = await c.from("families").delete().eq("id", member.family_id).eq("owner_id", au.id);
+    if (error) throw familyError(error);
+    return { ok: true };
+  },
+
+  kickMember: async ({ userId }) => {
+    const c = needClient();
+    const au = await sessionUser();
+    const member = await membershipOf(c, au.id);
+    if (!member) throw new ApiError(404, "fa.errNoFamily", "fa.errNoFamily");
+    if (member.role !== "owner") throw new ApiError(403, "fa.errOwnerOnly", "fa.errOwnerOnly");
+    if (userId === au.id) throw new ApiError(400, "fa.errOwnerLeave", "fa.errOwnerLeave");
+    const { error } = await c
+      .from("family_members")
+      .delete()
+      .eq("family_id", member.family_id)
+      .eq("user_id", userId);
+    if (error) throw familyError(error);
+    return { ok: true };
+  },
+
+  createFamilyMission: async ({ title, description, target }) => {
+    const c = needClient();
+    const au = await sessionUser();
+    const member = await membershipOf(c, au.id);
+    if (!member) throw new ApiError(404, "fa.errNoFamily", "fa.errNoFamily");
+    if (member.role !== "owner") throw new ApiError(403, "fa.errOwnerOnly", "fa.errOwnerOnly");
+    const judul = cleanMissionTitle(title);
+    if (!judul.ok) throw new ApiError(400, judul.key, judul.key);
+    const aim = cleanMissionTarget(target);
+    if (!aim.ok) throw new ApiError(400, aim.key, aim.key);
+    const { error } = await c.from("family_missions").insert({
+      family_id: member.family_id,
+      title: judul.value,
+      description: cleanDescription(description),
+      target: aim.value,
+      created_by: au.id
+    });
+    if (error) throw familyError(error);
+    return { ok: true };
+  },
+
+  deleteFamilyMission: async ({ id }) => {
+    const c = needClient();
+    const au = await sessionUser();
+    const member = await membershipOf(c, au.id);
+    if (!member) throw new ApiError(404, "fa.errNoFamily", "fa.errNoFamily");
+    if (member.role !== "owner") throw new ApiError(403, "fa.errOwnerOnly", "fa.errOwnerOnly");
+    const { error } = await c
+      .from("family_missions")
+      .delete()
+      .eq("id", id)
+      .eq("family_id", member.family_id);
+    if (error) throw familyError(error);
+    return { ok: true };
+  },
+
+  contribute: async ({ missionId }) => {
+    const c = needClient();
+    const au = await sessionUser();
+    const member = await membershipOf(c, au.id);
+    if (!member) throw new ApiError(404, "fa.errNoFamily", "fa.errNoFamily");
+    const { data: row, error: readErr } = await c
+      .from("family_missions")
+      .select("id, family_id, title, target, current, status")
+      .eq("id", missionId)
+      .maybeSingle();
+    if (readErr) throw new ApiError(500, readErr.message);
+    if (!row || row.family_id !== member.family_id) throw new ApiError(404, "fa.errNoMission", "fa.errNoMission");
+
+    // Kuota harian dicek ulang lewat canContribute supaya jawabannya konsisten
+    // dengan yang tampil di tombol. Policy insert tetap yang terakhir
+    // memutuskan, karena board yang sudah tampil di layar bisa saja basi.
+    const { data: mine, error: mineErr } = await c
+      .from("family_mission_contributions")
+      .select("created_at")
+      .eq("user_id", au.id)
+      .gte("created_at", new Date().toISOString().slice(0, 10) + "T00:00:00Z");
+    if (mineErr) throw new ApiError(500, mineErr.message);
+    const gate = canContribute({
+      mission: toFamilyMission(row),
+      contributions: (mine || []).map((r) => ({ userId: au.id, createdAt: r.created_at })),
+      userId: au.id,
+      today: todayKey()
+    });
+    if (!gate.ok) throw new ApiError(400, gate.key, gate.key);
+
+    const { error } = await c.from("family_mission_contributions").insert({
+      mission_id: missionId,
+      user_id: au.id,
+      value: 1
+    });
+    if (error) throw familyError(error);
+    const user = await mutateUser(au.id, (u) => {
+      applyContribution(u);
+    });
+    return { ok: true, user, gained: CONTRIB_PTS };
   },
 
   leaderboard: async () => {

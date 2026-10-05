@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node test/challengeRow.test.mjs && node test/money.test.mjs && node test/savings.test.mjs && node test/missions.test.mjs && node test/migration-check.mjs && node test/locale-keys.test.mjs"
+    "test": "node test/challengeRow.test.mjs && node test/money.test.mjs && node test/savings.test.mjs && node test/missions.test.mjs && node test/family.test.mjs && node test/sql-array-append.test.mjs && node test/migration-check.mjs && node test/locale-keys.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",

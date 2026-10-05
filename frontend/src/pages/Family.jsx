@@ -1,6 +1,7 @@
 import Glyph from "../lib/glyphs";
 import Meter from "../components/Meter";
 import BackLink from "../components/BackLink";
+import GroupSection from "./family/GroupSection";
 import { useApp } from "../context/AppContext";
 import { useI18n } from "../lib/i18n";
 import { dailyMissions, todayKey } from "../lib/util";
@@ -45,6 +46,11 @@ export default function Family() {
       <BackLink />
       <h1 className="page-title">{t("fa.title")}</h1>
       <p className="muted">{t("fa.sub")}</p>
+
+      {/* Family group di bawah undian harian, bukan di atas: misi hari ini
+          selalu bisa diselesaikan sendiri, jadi tidak boleh ada langkah
+          tambahan seperti "buat family dulu" di tengah jalan. */}
+      <GroupSection />
 
       <div className="mission-head">
         <p className="muted">{t("fa.today")}</p>

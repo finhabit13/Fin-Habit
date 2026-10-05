@@ -2,6 +2,7 @@
 // dan mode demo (store.js) agar hasilnya selalu konsisten.
 
 import { CASES, TOPIC_DIM } from "./data";
+import { CONTRIB_PTS } from "./family";
 import { overallScore } from "./util";
 
 export const QUIZ_CONFIG = {
@@ -111,6 +112,18 @@ export function applyReward(user, points, dim = null, dimUp = 0, opts = {}) {
   user.weekly[user.weekly.length - 1] = overallScore(user.dims);
   unlockBadges(user, opts);
   return user;
+}
+
+/**
+ * Hadiah satu baris kontribusi misi keluarga.
+ *
+ * Sengaja tidak mengikuti nilai kontribusi, karena nilai itu unit yang dipilih
+ * anggota sendiri: kalau poin ikut nilai, owner bisa membuat target besar lalu
+ * mengisinya sendiri. Jumlah baris per hari sudah dibatasi di family.js dan di
+ * policy insert contributions, jadi total poin misi keluarga per hari tertutup.
+ */
+export function applyContribution(user, opts = {}) {
+  return applyReward(user, CONTRIB_PTS, "goal", 1, opts);
 }
 
 export function shootForDay(user, today) {

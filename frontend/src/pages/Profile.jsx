@@ -10,7 +10,7 @@ const MAX_BYTES = 2 * 1024 * 1024;
 const OK_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export default function Profile() {
-  const { user, demo, run, logout, showToast, service } = useApp();
+  const { user, demo, run, logout, showToast, service, reloadFamily } = useApp();
   const { t, content, lang, setLang } = useI18n();
 
   const [name, setName] = useState("");
@@ -33,7 +33,13 @@ export default function Profile() {
   const reset = async () => {
     if (!confirm(t("pf.resetConfirm"))) return;
     const res = await run((s) => s.reset());
-    if (res.ok) showToast(t("toast.reset"));
+    if (res.ok) {
+      // Reset juga mengembalikan board family ke kondisi awal, jadi board-nya
+      // harus dimuat ulang. Kalau tidak, kartu Family Group masih menampilkan
+      // "belum punya family" padahal seed-nya sudah mengembalikan family.
+      await reloadFamily();
+      showToast(t("toast.reset"));
+    }
   };
 
   const owned = new Set(user.badges || []);

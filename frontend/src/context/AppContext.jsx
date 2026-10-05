@@ -20,6 +20,10 @@ export function AppProvider({ children }) {
   const [modal, setModal] = useState(null);
   const [recovering, setRecovering] = useState(false);
   const [challenges, setChallenges] = useState(() => offerableChallenges());
+  // Board family group: { family, role, members, missions, contributions } atau
+  // null kalau belum masuk family mana pun. null dan { family: null } sengaja
+  // dibedakan di adapter: keduanya berarti "belum punya family" untuk UI.
+  const [family, setFamily] = useState(null);
   // Goal tabungan yang sedang dibuka. Disimpan di context supaya halaman
   // daftar bisa melompat ke detail lalu kembali tanpa memuat ulang daftar.
   const [goalId, setGoalId] = useState(null);
@@ -72,6 +76,34 @@ export function AppProvider({ children }) {
     reloadChallenges();
   }, [demo, user?.id, reloadChallenges]);
 
+  /**
+   * Muat board family dari backend.
+   *
+   * Kegagalan tidak pernah menggagalkan halaman: family adalah fitur tambahan
+   * di halaman Misi, jadi user tanpa family (atau yang backend-nya belum punya
+   * tabel family) tetap bisa menyelesaikan misi hari ini. Karena itu state
+   * diturunkan ke bentuk "tidak punya family" saat error.
+   *
+   * "Belum ada session" juga menghasilkan bentuk yang sama, bukan null: null
+   * berarti sedang memuat. Kalau tidak, halaman sempat menampilkan ajakan
+   * "Buat family" ke orang yang belum login sama sekali.
+   */
+  const reloadFamily = useCallback(async () => {
+    try {
+      setFamily(await service.family());
+    } catch {
+      setFamily({ family: null, role: null, meId: null, members: [], missions: [], contributions: [] });
+    }
+  }, [service]);
+
+  useEffect(() => {
+    if (!user && !demo) {
+      setFamily({ family: null, role: null, meId: null, members: [], missions: [], contributions: [] });
+      return;
+    }
+    reloadFamily();
+  }, [demo, user?.id, reloadFamily]);
+
   const enterDemo = useCallback(
     (msg) => {
       if (demo) return;
@@ -92,6 +124,9 @@ export function AppProvider({ children }) {
     setUser(null);
     setDemo(false);
     setPage("home");
+    // Board family ikut dibuang: kalau tidak, user berikutnya yang login di
+    // browser yang sama akan sempat melihat roster milik user sebelumnya.
+    setFamily(null);
   }, []);
 
   const verifyMagicLink = useCallback(async (opts = {}) => {
@@ -165,6 +200,23 @@ export function AppProvider({ children }) {
       }
     },
     [demo, enterDemo, logout, showToast, service, t]
+  );
+
+  /**
+   * Jalankan aksi family lalu muat ulang board-nya.
+   *
+   * Semua aksi family mengubah data yang juga dibaca bagian lain dari board
+   * (anggota keluar, misi jadi lunas, poin bertambah), jadi refresh-nya
+   * dikumpulkan di satu tempat, bukan tiap tombol memanggil load sendiri.
+   * Errornya tetap milik run() supaya toast-nya tetap muncul.
+   */
+  const familyAction = useCallback(
+    async (fn) => {
+      const res = await run(fn);
+      if (res.ok) await reloadFamily();
+      return res;
+    },
+    [reloadFamily, run]
   );
 
   /**
@@ -341,6 +393,9 @@ export function AppProvider({ children }) {
     service,
     challenges,
     reloadChallenges,
+    family,
+    reloadFamily,
+    familyAction,
     resolved,
     page,
     go,

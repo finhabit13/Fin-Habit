@@ -9,7 +9,27 @@ import { challengeById, setRemoteChallenges } from "./challenges";
 import { dailyMissions, monthKey, todayKey, uid } from "./util";
 import { toAmount } from "./money";
 import { balanceOf } from "./savings";
-import { answerQuiz, applyReward, continueFree, dimOf, finishQuiz, shootForDay, startQuiz, unlockBadges } from "./rewards";
+import {
+  CONTRIB_PTS,
+  canContribute,
+  cleanDescription,
+  cleanFamilyName,
+  cleanInviteCode,
+  cleanMissionTarget,
+  cleanMissionTitle,
+  newInviteCode
+} from "./family";
+import {
+  answerQuiz,
+  applyContribution,
+  applyReward,
+  continueFree,
+  dimOf,
+  finishQuiz,
+  shootForDay,
+  startQuiz,
+  unlockBadges
+} from "./rewards";
 
 const KEY = "finhabit_demo_v1";
 
@@ -123,6 +143,75 @@ function seedSavingTransactions(goals) {
   ];
 }
 
+/**
+ * Family demo yang sudah terisi, supaya halaman tidak pernah tampil kosong saat
+ * demo dipakai untuk presentasi. Satu user demo tidak punya akun teammates, jadi
+ * roster disimpan denormalisasi (nama, avatar, poin) di dalam family itu
+ * sendiri, bukan seperti tabel profiles di Supabase.
+ *
+ * Kontribusi suspect sengaja dikasih tanggal beberapa hari lalu: kalau satu
+ * baris memakai userId "me" dan tanggal hari ini, kuota harian langsung
+ * berkurang sebelum user menyentuh apa pun.
+ */
+function seedFamily(name) {
+  const lalu = (hari) => new Date(Date.now() - hari * 86400000).toISOString();
+  const familyId = uid();
+  const misiId = [uid(), uid()];
+  const roster = [
+    { userId: "me", role: "owner", joinedAt: lalu(12), name: name || "Bailey", avatarUrl: null, points: db.user.points, streak: db.user.streak },
+    { userId: uid(), role: "member", joinedAt: lalu(11), name: "Ibu Rina", avatarUrl: null, points: 1240, streak: 12 },
+    { userId: uid(), role: "member", joinedAt: lalu(9), name: "Adik Fajar", avatarUrl: null, points: 430, streak: 4 }
+  ];
+  const members = clone(roster);
+  const contributedBy = (mission, pairs) =>
+    pairs.map(([memberIndex, hari]) => ({
+      id: uid(),
+      missionId: mission,
+      userId: members[memberIndex].userId,
+      value: 1,
+      createdAt: lalu(hari)
+    }));
+
+  return {
+    id: familyId,
+    name: "Keluarga Pintar",
+    ownerId: "me",
+    inviteCode: newInviteCode(),
+    createdAt: lalu(12),
+    members,
+    missions: [
+      {
+        id: misiId[0],
+        familyId,
+        title: "Belanja bulanan bareng",
+        description: "Susun daftar belanja bulanan bersama, lalu jalankan sesuai daftar.",
+        target: 8,
+        current: 3,
+        status: "active",
+        createdBy: "me",
+        createdAt: lalu(10),
+        completedAt: null
+      },
+      {
+        id: misiId[1],
+        familyId,
+        title: "Menu makan seminggu",
+        description: "Tetapkan menu makan untuk seminggu, lalu sesuaikan belanja.",
+        target: 5,
+        current: 5,
+        status: "completed",
+        createdBy: "me",
+        createdAt: lalu(14),
+        completedAt: lalu(2)
+      }
+    ],
+    contributions: [
+      ...contributedBy(misiId[0], [[0, 8], [1, 6], [2, 3]]),
+      ...contributedBy(misiId[1], [[1, 13], [0, 12], [2, 11], [1, 8], [0, 5]])
+    ]
+  };
+}
+
 function load() {
   try {
     const saved = localStorage.getItem(KEY);
@@ -134,14 +223,18 @@ function load() {
       if (parsed.savingGoals) {
         return {
           ...parsed,
-          savingTransactions: parsed.savingTransactions || seedSavingTransactions(parsed.savingGoals)
+          savingTransactions: parsed.savingTransactions || seedSavingTransactions(parsed.savingGoals),
+          // "family" sengaja tidak ||= seed: null berarti pengguna memang sudah
+          // keluar atau menghapus family-nya, dan itu harus dihormati.
+          family: parsed.family === undefined ? seedFamily(parsed.user?.name) : parsed.family
         };
       }
       const goals = seedSavingGoals();
       const migrated = {
         ...parsed,
         savingGoals: goals,
-        savingTransactions: seedSavingTransactions(goals)
+        savingTransactions: seedSavingTransactions(goals),
+        family: parsed.family === undefined ? seedFamily(parsed.user?.name) : parsed.family
       };
       persist(migrated);
       return migrated;
@@ -150,12 +243,14 @@ function load() {
     /* abaikan */
   }
   const goals = seedSavingGoals();
+  const user = seed();
   const fresh = {
-    user: seed(),
+    user,
     expenses: seedExpenses(),
     challenges: [],
     savingGoals: goals,
-    savingTransactions: seedSavingTransactions(goals)
+    savingTransactions: seedSavingTransactions(goals),
+    family: seedFamily(user.name)
   };
   persist(fresh);
   return fresh;
@@ -185,6 +280,76 @@ function grant(points, dim = null, dimUp = 0) {
 function shoot() {
   shootForDay(db.user, todayKey());
   persist();
+}
+
+// Id user demo. Sama dengan meId di leaderboard() supaya baris "kamu" bisa
+// dikenali tanpa session sungguhan.
+const ME = "me";
+
+// run() membaca err.key untuk diterjemahkan, jadi demo cukup melempar Error
+// dengan key locale dan tanpa pesan. Melempar, bukan mengembalikan { key }:
+// kalau dikembalikan, run() akan menganggap aksi itu berhasil.
+function stop(key) {
+  const err = new Error(key);
+  err.key = key;
+  throw err;
+}
+
+/** Baris roster untuk user demo, disalin dari profil supaya selalu sinkron. */
+function meAsMember(role) {
+  return {
+    userId: ME,
+    role,
+    joinedAt: new Date().toISOString(),
+    name: db.user.name,
+    avatarUrl: db.user.avatarUrl || null,
+    points: db.user.points,
+    streak: db.user.streak
+  };
+}
+
+/** Bentuk respons yang sama dengan api.family(). */
+function familyBoard() {
+  const f = db.family;
+  if (!f) return { family: null, role: null, meId: null, members: [], missions: [], contributions: [] };
+  const saya = f.members.find((m) => m.userId === ME);
+  // Baris "me" disalin ulang tiap load. Kalau tidak, kartu roster menampilkan
+  // poin dari saat family dibuat, padahal poin user sudah berubah karena
+  // pengeluaran, lesson, atau kontribusi misi keluarga.
+  const members = clone(f.members).map((m) => (m.userId === ME ? { ...m, ...meAsMember(m.role) } : m));
+  return {
+    family: { id: f.id, name: f.name, ownerId: f.ownerId, inviteCode: f.inviteCode },
+    role: saya?.role || null,
+    meId: ME,
+    members,
+    missions: clone(f.missions),
+    contributions: clone(f.contributions)
+  };
+}
+
+/**
+ * Hitung ulang current dan status tiap misi, meniru trigger
+ * update_family_mission_progress di migration 15: total kontribusi, lunas saat
+ * total >= target, dan kembali aktif kalau totalnya turun lagi.
+ */
+function syncProgress() {
+  if (!db.family) return;
+  db.family.missions.forEach((m) => {
+    const total = db.family.contributions
+      .filter((c) => c.missionId === m.id)
+      .reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+    m.current = total;
+    if (m.status === "cancelled") return;
+    if (total >= m.target) {
+      if (m.status !== "completed") {
+        m.status = "completed";
+        m.completedAt = new Date().toISOString();
+      }
+    } else if (m.status === "completed") {
+      m.status = "active";
+      m.completedAt = null;
+    }
+  });
 }
 
 /* ---------- API identik dengan backend ---------- */
@@ -422,6 +587,9 @@ export const store = {
     await delay();
     db.user = seed();
     db.expenses = seedExpenses();
+    // Family ikut diseed ulang supaya demo yang sudah dikosongkan lewat "hapus
+    // family" tidak terlihat rusak.
+    db.family = seedFamily(db.user.name);
     persist();
     return userView();
   },
@@ -645,6 +813,175 @@ export const store = {
     u.missionLog = { ...(u.missionLog || {}), [id]: hariIni };
     grant(misi.pts || 40, misi.dim || "goal", 2);
     return { user: userView() };
+  },
+
+  /* ---------- Family group ---------- */
+
+  async family() {
+    await delay();
+    return familyBoard();
+  },
+
+  async createFamily({ name }) {
+    await delay();
+    if (db.family) stop("fa.errHasFamily");
+    const cleaned = cleanFamilyName(name);
+    if (!cleaned.ok) stop(cleaned.key);
+    const familyId = uid();
+    db.family = {
+      id: familyId,
+      name: cleaned.value,
+      ownerId: ME,
+      inviteCode: newInviteCode(),
+      createdAt: new Date().toISOString(),
+      members: [meAsMember("owner")],
+      missions: [],
+      contributions: []
+    };
+    persist();
+    return { ok: true };
+  },
+
+  async joinFamily({ code }) {
+    await delay();
+    if (db.family) stop("fa.errHasFamily");
+    const cleaned = cleanInviteCode(code);
+    if (!cleaned.ok) stop(cleaned.key);
+    // Demo tidak punya tabel families untuk dicari, jadi kode yang bentuknya
+    // benar selalu diterima. Roster berisi beberapa nama supaya daftar anggota
+    // tidak cuma menampilkan diri sendiri.
+    const familyId = uid();
+    const lain = [
+      { name: "Ibu Rina", points: 1240, streak: 12 },
+      { name: "Kakak Dimas", points: 980, streak: 6 },
+      { name: "Adik Fajar", points: 430, streak: 4 }
+    ];
+    db.family = {
+      id: familyId,
+      name: "Keluarga Bersama",
+      ownerId: uid(),
+      inviteCode: cleaned.value,
+      createdAt: new Date().toISOString(),
+      members: [
+        {
+          userId: uid(),
+          role: "owner",
+          joinedAt: new Date().toISOString(),
+          name: lain[0].name,
+          avatarUrl: null,
+          points: lain[0].points,
+          streak: lain[0].streak
+        },
+        ...lain.slice(1).map((m) => ({
+          userId: uid(),
+          role: "member",
+          joinedAt: new Date().toISOString(),
+          name: m.name,
+          avatarUrl: null,
+          points: m.points,
+          streak: m.streak
+        })),
+        meAsMember("member")
+      ],
+      missions: [],
+      contributions: []
+    };
+    persist();
+    return { ok: true };
+  },
+
+  async leaveFamily() {
+    await delay();
+    if (!db.family) return { ok: true };
+    if (db.family.ownerId === ME) stop("fa.errOwnerLeave");
+    db.family = null;
+    persist();
+    return { ok: true };
+  },
+
+  async deleteFamily() {
+    await delay();
+    if (!db.family) return { ok: true };
+    if (db.family.ownerId !== ME) stop("fa.errOwnerOnly");
+    db.family = null;
+    persist();
+    return { ok: true };
+  },
+
+  async kickMember({ userId }) {
+    await delay();
+    if (!db.family) stop("fa.errNoFamily");
+    if (db.family.ownerId !== ME) stop("fa.errOwnerOnly");
+    if (userId === ME) stop("fa.errOwnerLeave");
+    db.family.members = db.family.members.filter((m) => m.userId !== userId);
+    db.family.contributions = db.family.contributions.filter((c) => c.userId !== userId);
+    syncProgress();
+    persist();
+    return { ok: true };
+  },
+
+  async createFamilyMission({ title, description, target }) {
+    await delay();
+    if (!db.family) stop("fa.errNoFamily");
+    if (db.family.ownerId !== ME) stop("fa.errOwnerOnly");
+    const judul = cleanMissionTitle(title);
+    if (!judul.ok) stop(judul.key);
+    const aim = cleanMissionTarget(target);
+    if (!aim.ok) stop(aim.key);
+    db.family.missions.push({
+      id: uid(),
+      familyId: db.family.id,
+      title: judul.value,
+      description: cleanDescription(description),
+      target: aim.value,
+      current: 0,
+      status: "active",
+      createdBy: ME,
+      createdAt: new Date().toISOString(),
+      completedAt: null
+    });
+    persist();
+    return { ok: true };
+  },
+
+  async deleteFamilyMission({ id }) {
+    await delay();
+    if (!db.family) stop("fa.errNoFamily");
+    if (db.family.ownerId !== ME) stop("fa.errOwnerOnly");
+    db.family.missions = db.family.missions.filter((m) => m.id !== id);
+    db.family.contributions = db.family.contributions.filter((c) => c.missionId !== id);
+    persist();
+    return { ok: true };
+  },
+
+  async contribute({ missionId }) {
+    await delay();
+    if (!db.family) stop("fa.errNoFamily");
+    const mission = db.family.missions.find((m) => m.id === missionId);
+    const gate = canContribute({
+      mission,
+      contributions: db.family.contributions,
+      userId: ME,
+      today: todayKey()
+    });
+    if (!gate.ok) stop(gate.key);
+    db.family.contributions.push({
+      id: uid(),
+      missionId,
+      userId: ME,
+      value: 1,
+      createdAt: new Date().toISOString()
+    });
+    syncProgress();
+    const gained = CONTRIB_PTS;
+    applyContribution(db.user, { hasExpenses: db.expenses.length > 0 });
+    const roster = db.family.members.find((m) => m.userId === ME);
+    if (roster) {
+      roster.points = db.user.points;
+      roster.streak = db.user.streak;
+    }
+    persist();
+    return { ok: true, user: userView(), gained };
   },
 
   async leaderboard() {
